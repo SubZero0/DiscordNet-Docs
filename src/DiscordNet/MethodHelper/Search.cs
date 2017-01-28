@@ -22,7 +22,10 @@ namespace DiscordNet.MethodHelper
             found.AddRange(FindMethod(_result));
             found = NamespaceFilter(found);
             if (_result.TakeFirst && found.Count > 0)
-                return new SearchResult<MethodInfo>(found.Where(x => x.Name == found.First().Name).ToList());
+            {
+                var first = found.First();
+                return new SearchResult<MethodInfo>(found.Where(x => $"{x.DeclaringType.Namespace}{x.DeclaringType.Name}{x.Name}" == $"{first.DeclaringType.Namespace}{first.DeclaringType.Name}{first.Name}").ToList());
+            }
             return new SearchResult<MethodInfo>(found);
         }
 

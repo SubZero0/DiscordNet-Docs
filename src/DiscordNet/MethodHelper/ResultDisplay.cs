@@ -37,14 +37,15 @@ namespace DiscordNet.MethodHelper
             EmbedBuilder eb = new EmbedBuilder();
             eb.Author = eab;
             int i = 1;
-            eb.Description = $"**Overloads:**\n{String.Join("\n", list.Select(x => $"``{i++}-`` {BuildMethod(x)}"))}";
-            var tips = Tips(list);
+            var overloads = list.GroupBy((x) => BuildMethod(x)); //TODO: Duplicates... probably coming from the interfaces?
+            eb.Description = $"**Overloads:**\n{String.Join("\n", overloads.Select(x => $"``{i++}-`` {x.Key}"))}";
+            var tips = Tips(overloads.Select(x => x.First()));
             i = 1;
             eb.Description += $"{(tips.Count == 0 ? "" : $"\n\n**Tips & examples:**\n{String.Join("\n", tips.Select(x => $"``{i++}-`` {x}"))}")}";
             return eb;
         }
 
-        internal List<string> Tips(List<MethodInfo> list)
+        internal List<string> Tips(IEnumerable<MethodInfo> list)
         {
             List<string> tips = new List<string>();
             if (list.FirstOrDefault(x => CompareTypes(x.ReturnType, typeof(Action)) || x.GetParameters().FirstOrDefault(y => CompareTypes(y.ParameterType, typeof(Action))) != null) != null)

@@ -22,13 +22,13 @@ namespace DiscordNet.MethodHelper
             if (_text.IndexOf(" first ", StringComparison.OrdinalIgnoreCase) != -1)
             {
                 takeFirst = true;
-                _text = _text.Replace(" first ", "");
+                _text = _text.Replace(" first ", " ");
             }
             if (_text.IndexOf(" search ", StringComparison.OrdinalIgnoreCase) != -1)
             {
                 isSearch = true;
                 Regex rgx = new Regex("( search | find )");
-                _text = rgx.Replace(_text, "");
+                _text = rgx.Replace(_text, " ");
             }
             string nspace = null;
             int idx;
@@ -39,7 +39,7 @@ namespace DiscordNet.MethodHelper
                 int idx2;
                 if ((idx2 = nspace.IndexOf(' ')) != -1)
                     nspace = nspace.Substring(0, idx2);
-                _text = _text.Replace($" in {nspace}", "");
+                _text = _text.Replace($" in {nspace}", " ");
             }
             if (_text.Contains(".") && idx == -1)
             {
