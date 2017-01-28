@@ -33,7 +33,7 @@ namespace DiscordNet
             MainHandler = new MainHandler(Discord);
             await MainHandler.InitializeEarlyAsync(map);
 
-            await Discord.LoginAsync(TokenType.Bot, "Mjc0MzY2MDg1MDExMDc5MTY5.C2xC1w.HLAgbMmdVWb4rhje-_47aacRFBo");
+            await Discord.LoginAsync(TokenType.Bot, "...");
             await Discord.ConnectAsync();
             Console.WriteLine($"Connected!");
 
