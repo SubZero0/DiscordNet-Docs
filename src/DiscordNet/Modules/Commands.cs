@@ -18,6 +18,7 @@ namespace DiscordNet.Modules
     public class GeneralCommands : ModuleBase<MyCommandContext>
     {
         [Command("docs")]
+        [Summary("Search and send the link to the Discord.Net 1.0 documentation")]
         public async Task Docs([Remainder] string query = null)
         {
             if (query == null)
@@ -114,6 +115,7 @@ namespace DiscordNet.Modules
          * method Method in Namespace
          */
         [Command("method")]
+        [Summary("Search and show a method and it's overloads")]
         public async Task Method([Remainder] string query = null)
         {
             if (query == null)
@@ -155,6 +157,7 @@ namespace DiscordNet.Modules
         }
 
         [Command("clean")]
+        [Summary("Delete all the messages from this bot within the last X messages")]
         public async Task Clean(int messages = 30)
         {
             var msgs = await Context.Channel.GetMessagesAsync(messages).Flatten();
@@ -164,6 +167,7 @@ namespace DiscordNet.Modules
         }
 
         [Command("source")]
+        [Summary("Source code location")]
         public async Task Source()
         {
             await ReplyAsync("Source: https://github.com/SubZero0/DiscordNet-Docs");
