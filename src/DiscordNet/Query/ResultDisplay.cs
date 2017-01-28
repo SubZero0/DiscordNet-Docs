@@ -36,14 +36,14 @@ namespace DiscordNet.Query
             EmbedBuilder eb = new EmbedBuilder().WithAuthor(eab);
             if (first is TypeInfo)
             {
-                TypeInfo r = (TypeInfo)o.First();
+                TypeInfo r = (TypeInfo)first;
                 eab.Name = $"Type: {r.Namespace}.{r.Name}";
                 eab.Url = $"https://discord.foxbot.me/docs/api/{r.Namespace}.{r.Name}.html";
                 eb.Description = $"Docs: {eab.Url}";
             }
             else if (first is MethodInfo)
             {
-                MethodInfo r = (MethodInfo)o.First();
+                MethodInfo r = (MethodInfo)first;
                 string link;
                 try
                 {
@@ -60,7 +60,7 @@ namespace DiscordNet.Query
             }
             else if(first is PropertyInfo)
             {
-                PropertyInfo r = (PropertyInfo)o.First();
+                PropertyInfo r = (PropertyInfo)first;
                 eab.Name = $"Property: {r.DeclaringType.Namespace}.{r.DeclaringType.Name}.{r.Name}";
                 eab.Url = $"https://discord.foxbot.me/docs/api/{r.DeclaringType.Namespace}.{r.DeclaringType.Name}.html{PropertyToDocs(r)}";
                 eb.Description = $"Docs: {eab.Url}";
