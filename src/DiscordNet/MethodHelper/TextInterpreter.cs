@@ -27,7 +27,7 @@ namespace DiscordNet.MethodHelper
             if (_text.IndexOf(" search ", StringComparison.OrdinalIgnoreCase) != -1)
             {
                 isSearch = true;
-                Regex rgx = new Regex("( search | find )");
+                Regex rgx = new Regex("( search )");
                 _text = rgx.Replace(_text, " ");
             }
             string nspace = null;
