@@ -22,7 +22,7 @@ namespace DiscordNet.Modules
         {
             if (query == null)
             {
-                await ReplyAsync("Docs: https://discord.foxbot.me/docs/ \nType ``.docs [query]`` to search the docs.");
+                await ReplyAsync("Docs: https://discord.foxbot.me/docs/ \nType ``docs [query]`` to search the docs.");
             }
             else if(query == "help")
             {
