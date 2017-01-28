@@ -1,19 +1,19 @@
 ﻿using Discord;
-using DiscordNet.MethodHelper;
+using DiscordNet.Query;
 using System;
 using System.Threading.Tasks;
 
 namespace DiscordNet.Handlers
 {
-    public class MethodHelperHandler
+    public class QueryHandler
     {
-        public Tuple<string, EmbedBuilder> Run(string text)
+        public async Task<Tuple<string, EmbedBuilder>> Run(string text)
         {
             var interpreterResult = new TextInterpreter(text).Run();
             var searchResult = new Search(interpreterResult).Run();
 
             if (searchResult.Count != 0)
-                return new ResultDisplay(searchResult).Run();
+                return Tuple.Create("", await new ResultDisplay(searchResult).Run());
             else
                 return Tuple.Create($"No results found for ``{text}``.", (EmbedBuilder)null);
         }

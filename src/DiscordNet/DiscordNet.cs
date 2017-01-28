@@ -16,9 +16,7 @@ namespace DiscordNet
         {
             Discord = new DiscordSocketClient(new DiscordSocketConfig()
             {
-                LogLevel = LogSeverity.Info,
-                MessageCacheSize = 50,
-                DownloadUsersOnGuildAvailable = true
+                LogLevel = LogSeverity.Info
             });
 
             Discord.Log += (message) =>

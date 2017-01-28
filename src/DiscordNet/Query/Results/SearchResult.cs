@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace DiscordNet.Results
+namespace DiscordNet.Query.Results
 {
     public class SearchResult<T> where T : class
     {

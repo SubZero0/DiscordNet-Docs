@@ -1,11 +1,8 @@
-﻿using DiscordNet.Results;
+﻿using DiscordNet.Query.Results;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
-namespace DiscordNet.MethodHelper
+namespace DiscordNet.Query
 {
     public class TextInterpreter
     {
@@ -18,7 +15,18 @@ namespace DiscordNet.MethodHelper
         public InterpreterResult Run()
         {
             //TODO: Better text parsing
-            bool takeFirst = false, isSearch = false;
+            bool searchTypes = true, searchMethods = true, searchProperties = true, takeFirst = false, isSearch = false;
+            if (_text.IndexOf(" type ", StringComparison.OrdinalIgnoreCase) != -1 || _text.IndexOf(" method ", StringComparison.OrdinalIgnoreCase) != -1 || _text.IndexOf(" property ", StringComparison.OrdinalIgnoreCase) != -1)
+            {
+                if (_text.IndexOf(" type ", StringComparison.OrdinalIgnoreCase) == -1)
+                    searchTypes = false;
+                if (_text.IndexOf(" method ", StringComparison.OrdinalIgnoreCase) == -1)
+                    searchMethods = false;
+                if (_text.IndexOf(" property ", StringComparison.OrdinalIgnoreCase) == -1)
+                    searchProperties = false;
+                Regex rgx = new Regex("( property | method | type )");
+                _text = rgx.Replace(_text, " ");
+            }
             if (_text.IndexOf(" first ", StringComparison.OrdinalIgnoreCase) != -1)
             {
                 takeFirst = true;
@@ -52,7 +60,7 @@ namespace DiscordNet.MethodHelper
             _text = _text.Trim();
             if (nspace != null)
                 nspace = nspace.Trim();
-            return new InterpreterResult(_text, nspace, takeFirst, isSearch, false, true, false);
+            return new InterpreterResult(_text, nspace, takeFirst, isSearch, searchTypes, searchMethods, searchProperties);
         }
     }
 }

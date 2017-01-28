@@ -53,6 +53,30 @@ namespace DiscordNet.Handlers
             var result = await commands.ExecuteAsync(context, argPos, map);
             if (!result.IsSuccess && result.Error != CommandError.UnknownCommand)
                 await msg.Channel.SendMessageAsync(result.ErrorReason);
+            else if(!result.IsSuccess)
+            {
+                string query = msg.Content.Substring(argPos);
+                if (query == "")
+                {
+                    await msg.Channel.SendMessageAsync("Docs: https://discord.foxbot.me/docs/ \nType ``@mention [query]`` to search the docs.\nOr ``@mention help`` if you don't know how.");
+                }
+                else
+                {
+                    using (msg.Channel.EnterTypingState())
+                    {
+                        try
+                        {
+                            var tuple = await MainHandler.QueryHandler.Run(query);
+                            await msg.Channel.SendMessageAsync(tuple.Item1, false, tuple.Item2);
+                        }
+                        catch (Exception e)
+                        {
+                            await msg.Channel.SendMessageAsync("Uh-oh... I think some pipes have broken...");
+                            Console.WriteLine(e.ToString());
+                        }
+                    }
+                }
+            }
         }
 
         public async Task<EmbedBuilder> HelpEmbedBuilder(ICommandContext context, string command = null)
@@ -86,11 +110,33 @@ namespace DiscordNet.Handlers
                                 }
                                 if (cmds.Count != 0)
                                 {
-                                    var list = cmds.OrderBy(x => ((x as CommandInfo)?.Name ?? (x as ModuleInfo)?.Name)).Select(x => $"{MainHandler.Prefix}{((x as CommandInfo)?.Name ?? (x as ModuleInfo)?.Name)}");
+                                    var list = cmds.Select(x => $"{((x as CommandInfo)?.Name ?? (x as ModuleInfo)?.Name)}").OrderBy(x => x);
                                     eb.Description += $"**{mi.Name}:** {String.Join(", ", list)}\n";
                                 }
                             }
                         }
+
+                eb.AddField((x) =>
+                {
+                    x.IsInline = false;
+                    x.Name = "Query help";
+                    x.Value = $"Usage: {context.Client.CurrentUser.Mention} [query]";
+                });
+                eb.AddField((x) =>
+                {
+                    x.IsInline = false;
+                    x.Name = "Keywords";
+                    x.Value = "search, first, method, type, property, in";
+                });
+                eb.AddField((x) =>
+                {
+                    x.IsInline = false;
+                    x.Name = "Examples";
+                    x.Value = "EmbedBuilder\n" +
+                              "SendMessageAsync in IMessageChannel\n" +
+                              "search send message first method\n" +
+                              "IGuildUser.Nickname";
+                });
             }
             else
             {

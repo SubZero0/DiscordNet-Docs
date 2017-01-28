@@ -1,4 +1,6 @@
-﻿using DiscordNet.Results;
+﻿using Discord;
+using DiscordNet.Query.Extensions;
+using DiscordNet.Query.Results;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,9 +9,9 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace DiscordNet.Docs
+namespace DiscordNet.Query
 {
-    public class ResultDisplay
+    public class ResultDisplay : MethodDisplay
     {
         private SearchResult<object> _result;
         public ResultDisplay(SearchResult<object> result)
@@ -17,24 +19,31 @@ namespace DiscordNet.Docs
             _result = result;
         }
 
-        public async Task<string> Run()
+        public async Task<EmbedBuilder> Run()
         {
-            if (_result.Count == 1)
-                return await Show(_result.List[0]);
+            var list = _result.List.GroupBy(x => GetPath(x));
+            if (list.Count() == 1)
+                return await Show(list.ElementAt(0));
             else
-                return ShowMultiple(_result.List);
+                return ShowMultiple(list.Select(x => x.First()));
         }
 
-        internal async Task<string> Show(object o)
+        internal async Task<EmbedBuilder> Show(IEnumerable<object> o)
         {
-            if (o is TypeInfo)
+            var first = o.First();
+            EmbedAuthorBuilder eab = new EmbedAuthorBuilder();
+            eab.IconUrl = "http://i.imgur.com/XW4RU5e.png";
+            EmbedBuilder eb = new EmbedBuilder().WithAuthor(eab);
+            if (first is TypeInfo)
             {
-                TypeInfo r = (TypeInfo)o;
-                return $"Here: https://discord.foxbot.me/docs/api/{r.Namespace}.{r.Name}.html";
+                TypeInfo r = (TypeInfo)o.First();
+                eab.Name = $"Type: {r.Namespace}.{r.Name}";
+                eab.Url = $"https://discord.foxbot.me/docs/api/{r.Namespace}.{r.Name}.html";
+                eb.Description = $"Docs: {eab.Url}";
             }
-            if (o is MethodInfo)
+            else if (first is MethodInfo)
             {
-                MethodInfo r = (MethodInfo)o;
+                MethodInfo r = (MethodInfo)o.First();
                 string link;
                 try
                 {
@@ -45,21 +54,35 @@ namespace DiscordNet.Docs
                     Console.WriteLine(e.ToString());
                     link = $"https://discord.foxbot.me/docs/api/{r.DeclaringType.Namespace}.{r.DeclaringType.Name}.html{MethodToDocs(r)}";
                 }
-                return $"Here: {link}";
+                eab.Name = $"Method: {r.DeclaringType.Namespace}.{r.DeclaringType.Name}.{r.Name}";
+                eab.Url = link;
+                eb.Description = $"**Docs:** {link}\n\n{ShowMethods(o.Select(x => (MethodInfo)x))}";
             }
-            if (o is PropertyInfo)
+            else if(first is PropertyInfo)
             {
-                PropertyInfo r = (PropertyInfo)o;
-                return $"Here: https://discord.foxbot.me/docs/api/{r.DeclaringType.Namespace}.{r.DeclaringType.Name}.html{PropertyToDocs(r)}";
+                PropertyInfo r = (PropertyInfo)o.First();
+                eab.Name = $"Property: {r.DeclaringType.Namespace}.{r.DeclaringType.Name}.{r.Name}";
+                eab.Url = $"https://discord.foxbot.me/docs/api/{r.DeclaringType.Namespace}.{r.DeclaringType.Name}.html{PropertyToDocs(r)}";
+                eb.Description = $"Docs: {eab.Url}";
             }
-            return "???";
+            return eb;
         }
 
-        internal string ShowMultiple(List<object> obj)
+        internal EmbedBuilder ShowMultiple(IEnumerable<object> obj)
         {
-            if (obj.Count > 10)
-                return $"**Too many results, try filtering your search. Some results:**\n{String.Join("\n", GetPaths(obj.Take(10)))}";
-            return $"**Did you mean:**\n{String.Join("\n", GetPaths(obj))}\nTry looking at: ``docs help`` to filter more your query.";
+            EmbedBuilder eb = new EmbedBuilder();
+            if (obj.Count() > 10)
+            {
+                eb.Title = "Too many results, try filtering your search. Some results:";
+                eb.Description = String.Join("\n", GetPaths(obj.Take(10)));
+            }
+            else
+            {
+                eb.Title = "Did you mean:";
+                eb.Description = String.Join("\n", GetPaths(obj));
+                eb.Footer = new EmbedFooterBuilder().WithText("Try looking at ``help`` to filter more your query.");
+            }
+            return eb;
         }
 
         internal async Task<string> GetMethodInDocs(string url, MethodInfo mi)
@@ -107,24 +130,28 @@ namespace DiscordNet.Docs
         {
             List<string> newlist = new List<string>();
             foreach(object o in list)
-            {
-                if (o is TypeInfo)
-                {
-                    TypeInfo r = (TypeInfo)o;
-                    newlist.Add($"Type: {r.Name} in {r.Namespace}");
-                }
-                if (o is MethodInfo)
-                {
-                    MethodInfo r = (MethodInfo)o;
-                    newlist.Add($"Method: {r.Name} in {r.DeclaringType.Namespace}.{r.DeclaringType.Name}");
-                }
-                if (o is PropertyInfo)
-                {
-                    PropertyInfo r = (PropertyInfo)o;
-                    newlist.Add($"Property: {r.Name} in {r.DeclaringType.Namespace}.{r.DeclaringType.Name}");
-                }
-            }
+                newlist.Add(GetPath(o));
             return newlist;
+        }
+
+        internal string GetPath(object o)
+        {
+            if (o is TypeInfo)
+            {
+                TypeInfo r = (TypeInfo)o;
+                return $"Type: {r.Name} in {r.Namespace}";
+            }
+            if (o is MethodInfo)
+            {
+                MethodInfo r = (MethodInfo)o;
+                return $"Method: {r.Name} in {r.DeclaringType.Namespace}.{r.DeclaringType.Name}";
+            }
+            if (o is PropertyInfo)
+            {
+                PropertyInfo r = (PropertyInfo)o;
+                return $"Property: {r.Name} in {r.DeclaringType.Namespace}.{r.DeclaringType.Name}";
+            }
+            return o.GetType().ToString();
         }
     }
 }

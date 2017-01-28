@@ -10,8 +10,7 @@ namespace DiscordNet.Controllers
         public DiscordSocketClient Client;
 
         public CommandHandler CommandHandler { get; private set; }
-        public DocsHandler DocsHandler { get; private set; }
-        public MethodHelperHandler MethodHelperHandler { get; private set; }
+        public QueryHandler QueryHandler { get; private set; }
 
         public readonly string Prefix = "dnet ";
 
@@ -19,8 +18,7 @@ namespace DiscordNet.Controllers
         {
             Client = Discord;
             CommandHandler = new CommandHandler();
-            DocsHandler = new DocsHandler();
-            MethodHelperHandler = new MethodHelperHandler();
+            QueryHandler = new QueryHandler();
         }
 
         public async Task InitializeEarlyAsync(IDependencyMap map)

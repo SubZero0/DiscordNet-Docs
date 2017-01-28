@@ -1,48 +1,24 @@
-﻿using Discord;
-using DiscordNet.Results;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
 using System.Reflection;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace DiscordNet.MethodHelper
+namespace DiscordNet.Query.Extensions
 {
-    public class ResultDisplay
+    public class MethodDisplay
     {
-        private SearchResult<MethodInfo> _result;
-        public ResultDisplay(SearchResult<MethodInfo> result)
+        internal string ShowMethods(IEnumerable<MethodInfo> list)
         {
-            _result = result;
-        }
-
-        public Tuple<string, EmbedBuilder> Run()
-        {
-            var groups = _result.List.GroupBy(x => $"{x.DeclaringType.Namespace}{x.DeclaringType.Name}{x.Name}");
-            if(groups.Count() == 1)
-                return Tuple.Create("", Show(_result.List));
-            else
-                return Tuple.Create(ShowMultiple(groups), (EmbedBuilder)null);
-        }
-
-        internal EmbedBuilder Show(List<MethodInfo> list)
-        {
+            string result;
             MethodInfo first = list.First();
-            EmbedAuthorBuilder eab = new EmbedAuthorBuilder();
-            eab.IconUrl = "http://i.imgur.com/XW4RU5e.png";
-            eab.Name = $"{first.DeclaringType.Namespace}.{first.DeclaringType.Name}.{first.Name}";
-            //eab.Url = "#"; //Link to docs?
-            EmbedBuilder eb = new EmbedBuilder();
-            eb.Author = eab;
             int i = 1;
             var overloads = list.GroupBy((x) => BuildMethod(x)); //TODO: Duplicates... probably coming from the interfaces?
-            eb.Description = $"**Overloads:**\n{String.Join("\n", overloads.Select(x => $"``{i++}-`` {x.Key}"))}";
+            result = $"**Overloads:**\n{String.Join("\n", overloads.Select(x => $"``{i++}-`` {x.Key}"))}";
             var tips = Tips(overloads.Select(x => x.First()));
             i = 1;
-            eb.Description += $"{(tips.Count == 0 ? "" : $"\n\n**Tips & examples:**\n{String.Join("\n", tips.Select(x => $"``{i++}-`` {x}"))}")}";
-            return eb;
+            result += $"{(tips.Count == 0 ? "" : $"\n\n**Tips & examples:**\n{String.Join("\n", tips.Select(x => $"``{i++}-`` {x}"))}")}";
+            return result;
         }
 
         internal List<string> Tips(IEnumerable<MethodInfo> list)
@@ -81,27 +57,9 @@ namespace DiscordNet.MethodHelper
             if ((idx = name.IndexOf('`')) != -1)
                 name = name.Substring(0, idx);
             string generic = "";
-            if(type.IsConstructedGenericType)
+            if (type.IsConstructedGenericType)
                 generic = $"<{String.Join(", ", type.GetGenericArguments().Select(x => BuildType(x)))}>";
             return $"{name}{generic}";
-        }
-
-        internal string ShowMultiple(IEnumerable<IGrouping<string, MethodInfo>> list)
-        {
-            if (list.Count() > 10)
-                return $"**Too many results, try filtering your search. Some results:**\n{String.Join("\n", GetPaths(list.Take(10)))}";
-            return $"**Did you mean:**\n{String.Join("\n", GetPaths(list))}\nTry looking at: ``method help`` to filter more your query.";
-        }
-
-        internal List<string> GetPaths(IEnumerable<IGrouping<string, MethodInfo>> list)
-        {
-            List<string> newlist = new List<string>();
-            foreach (var group in list)
-            {
-                MethodInfo mi = group.First();
-                newlist.Add($"{mi.Name}(...) in {mi.DeclaringType.Namespace}.{mi.DeclaringType.Name}");
-            }
-            return newlist;
         }
     }
 }
