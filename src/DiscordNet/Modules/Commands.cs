@@ -8,8 +8,10 @@ using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 namespace DiscordNet.Modules
@@ -32,6 +34,34 @@ namespace DiscordNet.Modules
         public async Task Source()
         {
             await ReplyAsync("Source: https://github.com/SubZero0/DiscordNet-Docs");
+        }
+
+        [Command("info")]
+        [Summary("Show some information")]
+        public async Task Info()
+        {
+            var application = await Context.Client.GetApplicationInfoAsync();
+            EmbedBuilder eb = new EmbedBuilder();
+            string name;
+            if (Context.Guild != null)
+            {
+                var user = await Context.Guild.GetCurrentUserAsync();
+                name = user.Nickname ?? user.Username;
+            }
+            else
+                name = Context.Client.CurrentUser.Username;
+            eb.Author = new EmbedAuthorBuilder().WithName(name).WithIconUrl(Context.Client.CurrentUser.AvatarUrl);
+            eb.ThumbnailUrl = Context.Client.CurrentUser.AvatarUrl;
+            eb.Description = $"{Format.Bold("Info")}\n" +
+                                $"- Library: Discord.Net ({DiscordConfig.Version})\n" +
+                                $"- Runtime: {RuntimeInformation.FrameworkDescription} {RuntimeInformation.OSArchitecture}\n" +
+                                $"- Uptime: {(DateTime.Now - Process.GetCurrentProcess().StartTime).ToString(@"dd\.hh\:mm\:ss")}\n\n" +
+
+                                $"{Format.Bold("Docs")}\n" +
+                                $"- Types: {Context.MainHandler.QueryHandler.Cache.GetTypeCount()}\n" +
+                                $"- Methods: {Context.MainHandler.QueryHandler.Cache.GetMethodCount()}\n" +
+                                $"- Properties: {Context.MainHandler.QueryHandler.Cache.GetPropertyCount()}\n";
+            await ReplyAsync("", false, eb);
         }
 
         [Command("eval", RunMode = RunMode.Async)] //TODO: Safe eval ? 👀
@@ -69,7 +99,7 @@ namespace DiscordNet.Modules
         [Summary("Shows the help command")]
         public async Task Help([Remainder] string command = null)
         {
-            await ReplyAsync("", embed: await Context.MainHandler.CommandHandler.HelpEmbedBuilder(Context, command));
+            await ReplyAsync("", embed: await Context.MainHandler.CommandHandler.HelpEmbedBuilderAsync(Context, command));
         }
     }
 }

@@ -24,6 +24,7 @@ namespace DiscordNet.Controllers
         public async Task InitializeEarlyAsync(IDependencyMap map)
         {
             await CommandHandler.InitializeAsync(this, map);
+            QueryHandler.Initialize();
         }
     }
 }

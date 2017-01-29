@@ -62,11 +62,15 @@ namespace DiscordNet.Handlers
                 }
                 else
                 {
-                    using (msg.Channel.EnterTypingState())
+                    if (!MainHandler.QueryHandler.IsReady())
+                    {
+                        await msg.Channel.SendMessageAsync("Loading cache..."); //TODO: Change message
+                    }
+                    else
                     {
                         try
                         {
-                            var tuple = await MainHandler.QueryHandler.Run(query);
+                            var tuple = await MainHandler.QueryHandler.RunAsync(query);
                             await msg.Channel.SendMessageAsync(tuple.Item1, false, tuple.Item2);
                         }
                         catch (Exception e)
@@ -79,7 +83,7 @@ namespace DiscordNet.Handlers
             }
         }
 
-        public async Task<EmbedBuilder> HelpEmbedBuilder(ICommandContext context, string command = null)
+        public async Task<EmbedBuilder> HelpEmbedBuilderAsync(ICommandContext context, string command = null)
         {
             EmbedBuilder eb = new EmbedBuilder();
             eb.Author = new EmbedAuthorBuilder().WithName("Help:").WithIconUrl("http://i.imgur.com/VzDRjUn.png");
@@ -118,24 +122,30 @@ namespace DiscordNet.Handlers
 
                 eb.AddField((x) =>
                 {
-                    x.IsInline = false;
+                    x.IsInline = true;
                     x.Name = "Query help";
                     x.Value = $"Usage: {context.Client.CurrentUser.Mention} [query]";
                 });
                 eb.AddField((x) =>
                 {
-                    x.IsInline = false;
+                    x.IsInline = true;
                     x.Name = "Keywords";
                     x.Value = "search, first, method, type, property, in";
                 });
                 eb.AddField((x) =>
                 {
-                    x.IsInline = false;
+                    x.IsInline = true;
                     x.Name = "Examples";
                     x.Value = "EmbedBuilder\n" +
-                              "SendMessageAsync in IMessageChannel\n" +
+                              "ModifyAsync in IRole\n" +
                               "search send message first method\n" +
                               "IGuildUser.Nickname";
+                });
+                eb.AddField((x) =>
+                {
+                    x.IsInline = true;
+                    x.Name = "Notes";
+                    x.Value = "(I) = Inherited";
                 });
             }
             else

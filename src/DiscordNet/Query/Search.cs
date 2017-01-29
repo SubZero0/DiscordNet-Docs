@@ -1,4 +1,5 @@
 ﻿using DiscordNet.Query.Results;
+using DiscordNet.Query.Wrappers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,31 +8,30 @@ using System.Reflection;
 namespace DiscordNet.Query
 {
     /*      Notes:
-     * Interfaces dont get their inherited members...
-     * It's not possible to find SendMessageAsync inside ITextChannel
-     * Maybe the Search would be better if it started looking first the namespace if provided?
      * 
-     *      Add a new query type:
+     * Add a new query type:
      * howto get nickname with TYPE
      * howto send message with parent type
      */
     public class Search
     {
         private InterpreterResult _result;
-        public Search(InterpreterResult result)
+        private Cache _cache;
+        public Search(InterpreterResult result, Cache cache)
         {
             _result = result;
+            _cache = cache;
         }
 
         public SearchResult<object> Run()
         {
             List<object> found = new List<object>();
             if (_result.SearchTypes)
-                found.AddRange(FindType());
+                found.AddRange(_cache.SearchTypes(_result.Text, !_result.IsSearch));
             if (_result.SearchMethods)
-                found.AddRange(FindMethod());
+                found.AddRange(_cache.SearchMethods(_result.Text, !_result.IsSearch));
             if (_result.SearchProperties)
-                found.AddRange(FindProperty());
+                found.AddRange(_cache.SearchProperties(_result.Text, !_result.IsSearch));
             found = NamespaceFilter(found);
             if (_result.TakeFirst && found.Count > 0)
             {
@@ -48,15 +48,15 @@ namespace DiscordNet.Query
                 TypeInfo r = (TypeInfo)o;
                 return $"Type: {r.Name} in {r.Namespace}";
             }
-            if (o is MethodInfo)
+            if (o is MethodInfoWrapper)
             {
-                MethodInfo r = (MethodInfo)o;
-                return $"Method: {r.Name} in {r.DeclaringType.Namespace}.{r.DeclaringType.Name}";
+                MethodInfoWrapper r = (MethodInfoWrapper)o;
+                return $"Method: {r.Method.Name} in {r.Parent.Namespace}.{r.Parent.Name}";
             }
-            if (o is PropertyInfo)
+            if (o is PropertyInfoWrapper)
             {
-                PropertyInfo r = (PropertyInfo)o;
-                return $"Property: {r.Name} in {r.DeclaringType.Namespace}.{r.DeclaringType.Name}";
+                PropertyInfoWrapper r = (PropertyInfoWrapper)o;
+                return $"Property: {r.Property.Name} in {r.Parent.Namespace}.{r.Parent.Name}";
             }
             return o.GetType().ToString();
         }
@@ -77,23 +77,23 @@ namespace DiscordNet.Query
                             list.Add(o);
                     }
                 }
-                if (o is MethodInfo)
+                if (o is MethodInfoWrapper)
                 {
-                    MethodInfo r = (MethodInfo)o;
-                    if (!r.DeclaringType.Namespace.StartsWith("Discord.API"))
+                    MethodInfoWrapper r = (MethodInfoWrapper)o;
+                    if (!r.Parent.Namespace.StartsWith("Discord.API"))
                     {
-                        if (_result.Namespace != null && $"{r.DeclaringType.Namespace}.{r.DeclaringType.Name}".IndexOf(_result.Namespace, StringComparison.OrdinalIgnoreCase) != -1)
+                        if (_result.Namespace != null && $"{r.Parent.Namespace}.{r.Parent.Name}".IndexOf(_result.Namespace, StringComparison.OrdinalIgnoreCase) != -1)
                             list.Add(o);
                         else if (_result.Namespace == null)
                             list.Add(o);
                     }
                 }
-                if (o is PropertyInfo)
+                if (o is PropertyInfoWrapper)
                 {
-                    PropertyInfo r = (PropertyInfo)o;
-                    if (!r.DeclaringType.Namespace.StartsWith("Discord.API"))
+                    PropertyInfoWrapper r = (PropertyInfoWrapper)o;
+                    if (!r.Parent.Namespace.StartsWith("Discord.API"))
                     {
-                        if (_result.Namespace != null && $"{r.DeclaringType.Namespace}.{r.DeclaringType.Name}".IndexOf(_result.Namespace, StringComparison.OrdinalIgnoreCase) != -1)
+                        if (_result.Namespace != null && $"{r.Parent.Namespace}.{r.Parent.Name}".IndexOf(_result.Namespace, StringComparison.OrdinalIgnoreCase) != -1)
                             list.Add(o);
                         else if (_result.Namespace == null)
                             list.Add(o);
@@ -101,71 +101,6 @@ namespace DiscordNet.Query
                 }
             }
             return list;
-        }
-
-        internal List<TypeInfo> FindType()
-        {
-            List<TypeInfo> list = new List<TypeInfo>();
-            foreach (var a in Assembly.GetEntryAssembly().GetReferencedAssemblies())
-                if (a.Name.StartsWith("Discord"))
-                {
-                    Assembly loaded = Assembly.Load(a);
-                    var found = loaded.GetExportedTypes().Where(x => (_result.IsSearch ? SearchFunction(x.Name) : x.Name.ToLower() == _result.Text.ToLower())).Select(x => x.GetTypeInfo());
-                    if (found.Count() != 0)
-                        list.AddRange(found);
-                    found = loaded.GetExportedTypes().SelectMany(x => x.GetInterfaces()).Where(x => (_result.IsSearch ? SearchFunction(x.Name) : x.Name.ToLower() == _result.Text.ToLower())).Select(x => x.GetTypeInfo());
-                    if (found.Count() != 0)
-                        list.AddRange(found);
-                }
-            return list;
-        }
-
-        internal List<MethodInfo> FindMethod()
-        {
-            List<MethodInfo> list = new List<MethodInfo>();
-            foreach (var a in Assembly.GetEntryAssembly().GetReferencedAssemblies())
-                if (a.Name.StartsWith("Discord"))
-                {
-                    Assembly loaded = Assembly.Load(a);
-                    foreach (Type t in loaded.GetExportedTypes())
-                    {
-                        var found = t.GetMethods().Where(x => (_result.IsSearch ? SearchFunction(x.Name) : x.Name.ToLower() == _result.Text.ToLower()) && x.IsPublic && !x.IsSpecialName);
-                        if (found.Count() != 0)
-                            list.AddRange(found);
-                        found = t.GetInterfaces().SelectMany(x => x.GetMethods()).Where(x => (_result.IsSearch ? SearchFunction(x.Name) : x.Name.ToLower() == _result.Text.ToLower()) && x.IsPublic && !x.IsSpecialName);
-                        if (found.Count() != 0)
-                            list.AddRange(found);
-                    }
-                }
-            return list;
-        }
-
-        internal List<PropertyInfo> FindProperty()
-        {
-            List<PropertyInfo> list = new List<PropertyInfo>();
-            foreach (var a in Assembly.GetEntryAssembly().GetReferencedAssemblies())
-                if (a.Name.StartsWith("Discord"))
-                {
-                    Assembly loaded = Assembly.Load(a);
-                    foreach (Type t in loaded.GetExportedTypes())
-                    {
-                        var found = t.GetProperties().Where(x => (_result.IsSearch ? SearchFunction(x.Name) : x.Name.ToLower() == _result.Text.ToLower()));
-                        if (found.Count() != 0)
-                            list.AddRange(found);
-                        found = t.GetInterfaces().SelectMany(x => x.GetProperties()).Where(x => (_result.IsSearch ? SearchFunction(x.Name) : x.Name.ToLower() == _result.Text.ToLower()));
-                        if (found.Count() != 0)
-                            list.AddRange(found);
-                    }
-                }
-            return list;
-        }
-
-        internal bool SearchFunction(string objectName)
-        {
-            foreach (string s in _result.Text.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries))
-                if (objectName.IndexOf(s, StringComparison.OrdinalIgnoreCase) == -1)
-                    return false;
-            return true;
         }
     }
 }
