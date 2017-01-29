@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net.Http;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -27,6 +28,38 @@ namespace DiscordNet.Modules
             msgs = msgs.Where(x => x.Author.Id == Context.Client.CurrentUser.Id);
             foreach (IMessage msg in msgs)
                 await msg.DeleteAsync();
+        }
+
+        [Command("guide")]
+        [Summary("Show the url of a guide")]
+        public async Task Guide([Remainder] string guide = null)
+        {
+            string html;
+            using (var httpClient = new HttpClient())
+            {
+                var res = await httpClient.GetAsync("https://raw.githubusercontent.com/RogueException/Discord.Net/dev/docs/guides/toc.yml");
+                if (!res.IsSuccessStatusCode)
+                    throw new Exception($"An error occurred: {res.ReasonPhrase}");
+                html = await res.Content.ReadAsStringAsync();
+            }
+            var separate = html.Split(new string[] { "\n" }, StringSplitOptions.RemoveEmptyEntries);
+            Dictionary<string, string> guides = new Dictionary<string, string>();
+            for (int i = 0; i < separate.Length; i += 2)
+            {
+                var key = separate[i].Split(':')[1].Trim();
+                var value = separate[i+1].Split(':')[1].Trim();
+                guides[key] = value;
+            }
+            if(guide == null)
+                await ReplyAsync($"**Guides:** {string.Join(", ", guides.Select(x => x.Key))}\nChoose with: guide [name]");
+            else
+            {
+                var results = guides.Where(x => x.Key.IndexOf(guide, StringComparison.OrdinalIgnoreCase) != -1);
+                if(results.Count() != 1)
+                    await ReplyAsync($"**Did you mean:** {string.Join(", ", results.Select(x => x.Key))}\nChoose with: guide [name]");
+                else
+                    await ReplyAsync($"{results.First().Key}: https://discord.foxbot.me/docs/guides/{results.First().Value.Replace(".md", ".html")}");
+            }
         }
 
         [Command("source")]
