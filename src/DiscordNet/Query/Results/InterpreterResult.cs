@@ -7,15 +7,17 @@
         public bool SearchTypes { get; private set; }
         public bool SearchMethods { get; private set; }
         public bool SearchProperties { get; private set; }
+        public bool SearchEvents { get; private set; }
         public bool TakeFirst { get; private set; }
         public bool IsSearch { get; private set; }
-        public InterpreterResult(string text, string nspace = null, bool takeFirst = false, bool isSearch = false, bool searchTypes = true, bool searchMethods = true, bool searchProperties = true)
+        public InterpreterResult(string text, string nspace = null, bool takeFirst = false, bool isSearch = false, bool searchTypes = true, bool searchMethods = true, bool searchProperties = true, bool searchEvents = true)
         {
             Text = text;
             Namespace = nspace;
             SearchTypes = searchTypes;
             SearchMethods = searchMethods;
             SearchProperties = searchProperties;
+            SearchEvents = searchEvents;
             TakeFirst = takeFirst;
             IsSearch = isSearch;
         }

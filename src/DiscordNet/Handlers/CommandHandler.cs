@@ -122,7 +122,7 @@ namespace DiscordNet.Handlers
 
                 eb.AddField((x) =>
                 {
-                    x.IsInline = true;
+                    x.IsInline = false;
                     x.Name = "Query help";
                     x.Value = $"Usage: {context.Client.CurrentUser.Mention} [query]";
                 });
@@ -130,7 +130,7 @@ namespace DiscordNet.Handlers
                 {
                     x.IsInline = true;
                     x.Name = "Keywords";
-                    x.Value = "search, first, method, type, property, in";
+                    x.Value = "search, first, method, type,\nproperty, event, in";
                 });
                 eb.AddField((x) =>
                 {
@@ -141,12 +141,7 @@ namespace DiscordNet.Handlers
                               "search send message first method\n" +
                               "IGuildUser.Nickname";
                 });
-                eb.AddField((x) =>
-                {
-                    x.IsInline = true;
-                    x.Name = "Notes";
-                    x.Value = "(I) = Inherited";
-                });
+                eb.Footer = new EmbedFooterBuilder().WithText("Note: (i) = Inherited");
             }
             else
             {

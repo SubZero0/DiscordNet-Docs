@@ -85,15 +85,30 @@ namespace DiscordNet.Modules
                 name = Context.Client.CurrentUser.Username;
             eb.Author = new EmbedAuthorBuilder().WithName(name).WithIconUrl(Context.Client.CurrentUser.AvatarUrl);
             eb.ThumbnailUrl = Context.Client.CurrentUser.AvatarUrl;
-            eb.Description = $"{Format.Bold("Info")}\n" +
-                                $"- Library: Discord.Net ({DiscordConfig.Version})\n" +
-                                $"- Runtime: {RuntimeInformation.FrameworkDescription} {RuntimeInformation.OSArchitecture}\n" +
-                                $"- Uptime: {(DateTime.Now - Process.GetCurrentProcess().StartTime).ToString(@"dd\.hh\:mm\:ss")}\n\n" +
-
-                                $"{Format.Bold("Docs")}\n" +
-                                $"- Types: {Context.MainHandler.QueryHandler.Cache.GetTypeCount()}\n" +
-                                $"- Methods: {Context.MainHandler.QueryHandler.Cache.GetMethodCount()}\n" +
-                                $"- Properties: {Context.MainHandler.QueryHandler.Cache.GetPropertyCount()}\n";
+            eb.AddField(x =>
+            {
+                x.IsInline = false;
+                x.Name = "Info";
+                x.Value = $"- Library: Discord.Net ({DiscordConfig.Version})\n" +
+                          $"- Runtime: {RuntimeInformation.FrameworkDescription} {RuntimeInformation.OSArchitecture}\n" +
+                          $"- Uptime: {(DateTime.Now - Process.GetCurrentProcess().StartTime).ToString(@"dd\.hh\:mm\:ss")}";
+            });
+            eb.AddField(x =>
+            {
+                x.IsInline = true;
+                x.Name = "Docs";
+                x.Value = $"- Types: {Context.MainHandler.QueryHandler.Cache.GetTypeCount()}\n" +
+                          $"- Methods: {Context.MainHandler.QueryHandler.Cache.GetMethodCount()}\n" +
+                          $"- Properties: {Context.MainHandler.QueryHandler.Cache.GetPropertyCount()}";
+            });
+            eb.AddField(x =>
+            {
+                x.IsInline = true;
+                x.Name = "​"; // <- zero-width space here
+                x.Value = $"- Events: {Context.MainHandler.QueryHandler.Cache.GetEventCount()}\n" +
+                          $"- Extension types: {Context.MainHandler.QueryHandler.Cache.GetExtensionTypesCount()}\n" +
+                          $"- Extension methods: {Context.MainHandler.QueryHandler.Cache.GetExtensioMethodsCount()}";
+            });
             await ReplyAsync("", false, eb);
         }
 

@@ -15,8 +15,8 @@ namespace DiscordNet.Query
         public InterpreterResult Run()
         {
             //TODO: Better text parsing
-            bool searchTypes = true, searchMethods = true, searchProperties = true, takeFirst = false, isSearch = false;
-            if (_text.IndexOf(" type ", StringComparison.OrdinalIgnoreCase) != -1 || _text.IndexOf(" method ", StringComparison.OrdinalIgnoreCase) != -1 || _text.IndexOf(" property ", StringComparison.OrdinalIgnoreCase) != -1)
+            bool searchTypes = true, searchMethods = true, searchProperties = true, searchEvents = true, takeFirst = false, isSearch = false;
+            if (_text.IndexOf(" type ", StringComparison.OrdinalIgnoreCase) != -1 || _text.IndexOf(" method ", StringComparison.OrdinalIgnoreCase) != -1 || _text.IndexOf(" property ", StringComparison.OrdinalIgnoreCase) != -1 || _text.IndexOf(" event ", StringComparison.OrdinalIgnoreCase) != -1)
             {
                 if (_text.IndexOf(" type ", StringComparison.OrdinalIgnoreCase) == -1)
                     searchTypes = false;
@@ -24,18 +24,21 @@ namespace DiscordNet.Query
                     searchMethods = false;
                 if (_text.IndexOf(" property ", StringComparison.OrdinalIgnoreCase) == -1)
                     searchProperties = false;
-                Regex rgx = new Regex("( property | method | type )");
+                if (_text.IndexOf(" event ", StringComparison.OrdinalIgnoreCase) == -1)
+                    searchEvents = false;
+                Regex rgx = new Regex("( property | method | type | event )", RegexOptions.IgnoreCase);
                 _text = rgx.Replace(_text, " ");
             }
             if (_text.IndexOf(" first ", StringComparison.OrdinalIgnoreCase) != -1)
             {
                 takeFirst = true;
-                _text = _text.Replace(" first ", " ");
+                Regex rgx = new Regex("( first )", RegexOptions.IgnoreCase);
+                _text = rgx.Replace(_text, " ");
             }
             if (_text.IndexOf(" search ", StringComparison.OrdinalIgnoreCase) != -1)
             {
                 isSearch = true;
-                Regex rgx = new Regex("( search )");
+                Regex rgx = new Regex("( search )", RegexOptions.IgnoreCase);
                 _text = rgx.Replace(_text, " ");
             }
             string nspace = null;
@@ -60,7 +63,7 @@ namespace DiscordNet.Query
             _text = _text.Trim();
             if (nspace != null)
                 nspace = nspace.Trim();
-            return new InterpreterResult(_text, nspace, takeFirst, isSearch, searchTypes, searchMethods, searchProperties);
+            return new InterpreterResult(_text, nspace, takeFirst, isSearch, searchTypes, searchMethods, searchProperties, searchEvents);
         }
     }
 }
