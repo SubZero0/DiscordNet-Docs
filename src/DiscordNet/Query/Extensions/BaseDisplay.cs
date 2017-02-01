@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace DiscordNet.Query.Extensions
@@ -18,7 +19,7 @@ namespace DiscordNet.Query.Extensions
             string html = await GetWebDocsHtmlAsync(url, o);
             if (!string.IsNullOrEmpty(html))
             {
-                string block = ((o is TypeInfo) ? html.Substring(html.IndexOf($"<h1 id=\"{search}")) : html.Substring(html.IndexOf($"<h4 id=\"{search}")));
+                string block = ((o is TypeInfoWrapper) ? html.Substring(html.IndexOf($"<h1 id=\"{search}")) : html.Substring(html.IndexOf($"<h4 id=\"{search}")));
                 string anchor = block.Substring(block.IndexOf('"') + 1);
                 anchor = anchor.Substring(0, anchor.IndexOf('"'));
                 summary = block.Substring(block.IndexOf("summary\">") + 9);
@@ -26,7 +27,7 @@ namespace DiscordNet.Query.Extensions
                 summary = StripTags(summary);
                 /*string example = block.Substring(block.IndexOf("example\">")); //TODO: Find this
                 summary = summary.Substring(0, summary.IndexOf("</div>"));*/
-                if (!(o is TypeInfo) && !IsInherited(o))
+                if (!(o is TypeInfoWrapper) && !IsInherited(o))
                     url += $"#{anchor}";
             }
             else
@@ -45,7 +46,7 @@ namespace DiscordNet.Query.Extensions
                     if (!mi.Method.DeclaringType.Namespace.StartsWith("Discord"))
                         return "";
                     else
-                        url = $"https://discord.foxbot.me/docs/api/{mi.Method.DeclaringType.Namespace}.{mi.Method.DeclaringType.Name}.html";
+                        url = $"https://discord.foxbot.me/docs/api/{$"{mi.Method.DeclaringType.Namespace}.{mi.Method.DeclaringType.Name}".SanitizeDocsUrl()}.html";
                 }
                 else
                 {
@@ -53,7 +54,7 @@ namespace DiscordNet.Query.Extensions
                     if (!pi.Property.DeclaringType.Namespace.StartsWith("Discord"))
                         return "";
                     else
-                        url = $"https://discord.foxbot.me/docs/api/{pi.Property.DeclaringType.Namespace}.{pi.Property.DeclaringType.Name}.html";
+                        url = $"https://discord.foxbot.me/docs/api/{$"{pi.Property.DeclaringType.Namespace}.{pi.Property.DeclaringType.Name}".SanitizeDocsUrl()}.html";
                 }
             }
             using (var httpClient = new HttpClient())
@@ -69,27 +70,34 @@ namespace DiscordNet.Query.Extensions
         private static string GetDocsUrlPath(object o)
         {
             bool useParent = !IsInherited(o);
-            if (o is TypeInfo)
+            Regex rgx = new Regex("\\W+");
+            if (o is TypeInfoWrapper)
             {
-                TypeInfo r = (TypeInfo)o;
-                return $"{r.Namespace}_{r.Name}".Replace('.', '_');
+                TypeInfoWrapper r = (TypeInfoWrapper)o;
+                return rgx.Replace($"{r.TypeInfo.Namespace}_{r.TypeInfo.Name}", "_");
             }
             if (o is MethodInfoWrapper)
             {
                 MethodInfoWrapper r = (MethodInfoWrapper)o;
-                return $"{(useParent ? r.Parent.Namespace : r.Method.DeclaringType.Namespace)}_{(useParent ? r.Parent.Name : r.Method.DeclaringType.Name)}_{r.Method.Name}_".Replace('.', '_');
+                return rgx.Replace($"{(useParent ? r.Parent.TypeInfo.Namespace : r.Method.DeclaringType.Namespace)}_{(useParent ? r.Parent.TypeInfo.Name : r.Method.DeclaringType.Name)}_{r.Method.Name}_", "_");
             }
             if (o is PropertyInfoWrapper)
             {
                 PropertyInfoWrapper r = (PropertyInfoWrapper)o;
-                return $"{(useParent ? r.Parent.Namespace : r.Property.DeclaringType.Namespace)}_{(useParent ? r.Parent.Name : r.Property.DeclaringType.Name)}_{r.Property.Name}".Replace('.', '_');
+                return rgx.Replace($"{(useParent ? r.Parent.TypeInfo.Namespace : r.Property.DeclaringType.Namespace)}_{(useParent ? r.Parent.TypeInfo.Name : r.Property.DeclaringType.Name)}_{r.Property.Name}", "_");
             }
-            if (o is EventInfo)
+            if (o is EventInfoWrapper)
             {
-                EventInfo r = (EventInfo)o;
-                return $"{r.DeclaringType.Namespace}_{r.DeclaringType.Name}_{r.Name}".Replace('.', '_');
+                EventInfoWrapper r = (EventInfoWrapper)o;
+                return rgx.Replace($"{r.Parent.TypeInfo.Namespace}_{r.Parent.TypeInfo.Name}_{r.Event.Name}".Replace('.', '_'), "_");
             }
-            return $"{o.GetType().Namespace}_{o.GetType().Name}".Replace('.', '_');
+            return rgx.Replace($"{o.GetType().Namespace}_{o.GetType().Name}".Replace('.', '_'), "_");
+        }
+
+        //Generic types will return like Type`1 and the docs change to Type-1
+        public static string SanitizeDocsUrl(this string text)
+        {
+            return text.Replace('`', '-');
         }
 
         public static bool IsInherited(object o)
@@ -97,12 +105,12 @@ namespace DiscordNet.Query.Extensions
             if (o is PropertyInfoWrapper)
             {
                 var pi = (PropertyInfoWrapper)o;
-                return $"{pi.Parent.Namespace}.{pi.Parent.Name}" != $"{pi.Property.DeclaringType.Namespace}.{pi.Property.DeclaringType.Name}";
+                return $"{pi.Parent.TypeInfo.Namespace}.{pi.Parent.TypeInfo.Name}" != $"{pi.Property.DeclaringType.Namespace}.{pi.Property.DeclaringType.Name}";
             }
             if (o is MethodInfoWrapper)
             {
                 var mi = (MethodInfoWrapper)o;
-                return $"{mi.Parent.Namespace}.{mi.Parent.Name}" != $"{mi.Method.DeclaringType.Namespace}.{mi.Method.DeclaringType.Name}";
+                return $"{mi.Parent.TypeInfo.Namespace}.{mi.Parent.TypeInfo.Name}" != $"{mi.Method.DeclaringType.Namespace}.{mi.Method.DeclaringType.Name}";
             }
             return false;
         }
@@ -117,25 +125,25 @@ namespace DiscordNet.Query.Extensions
 
         public static string GetPath(object o, bool withInheritanceMarkup = true)
         {
-            if (o is TypeInfo)
+            if (o is TypeInfoWrapper)
             {
-                TypeInfo r = (TypeInfo)o;
-                return $"Type: {r.Name} in {r.Namespace}";
+                TypeInfoWrapper r = (TypeInfoWrapper)o;
+                return $"Type: {r.DisplayName} in {r.TypeInfo.Namespace}";
             }
             if (o is MethodInfoWrapper)
             {
                 MethodInfoWrapper r = (MethodInfoWrapper)o;
-                return $"Method: {r.Method.Name} in {r.Parent.Namespace}.{r.Parent.Name}{(IsInherited(r) && withInheritanceMarkup ? " (i)" : "")}";
+                return $"Method: {r.Method.Name} in {r.Parent.TypeInfo.Namespace}.{r.Parent.DisplayName}{(IsInherited(r) && withInheritanceMarkup ? " (i)" : "")}";
             }
             if (o is PropertyInfoWrapper)
             {
                 PropertyInfoWrapper r = (PropertyInfoWrapper)o;
-                return $"Property: {r.Property.Name} in {r.Parent.Namespace}.{r.Parent.Name}{(IsInherited(r) && withInheritanceMarkup ? " (i)" : "")}";
+                return $"Property: {r.Property.Name} in {r.Parent.TypeInfo.Namespace}.{r.Parent.DisplayName}{(IsInherited(r) && withInheritanceMarkup ? " (i)" : "")}";
             }
-            if (o is EventInfo)
+            if (o is EventInfoWrapper)
             {
-                EventInfo r = (EventInfo)o;
-                return $"Event: {r.Name} in {r.DeclaringType.Namespace}.{r.DeclaringType.Name}";
+                EventInfoWrapper r = (EventInfoWrapper)o;
+                return $"Event: {r.Event.Name} in {r.Parent.TypeInfo.Namespace}.{r.Parent.DisplayName}";
             }
             return o.GetType().ToString();
         }

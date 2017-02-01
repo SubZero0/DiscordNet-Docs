@@ -2,14 +2,14 @@
 
 namespace DiscordNet.Query.Wrappers
 {
-    public class MethodInfoWrapper
+    public class EventInfoWrapper
     {
-        public MethodInfo Method { get; private set; }
+        public EventInfo Event { get; private set; }
         public TypeInfoWrapper Parent { get; private set; }
-        public MethodInfoWrapper(TypeInfoWrapper parent, MethodInfo method)
+        public EventInfoWrapper(TypeInfoWrapper parent, EventInfo e)
         {
             Parent = parent;
-            Method = method;
+            Event = e;
         }
     }
 }

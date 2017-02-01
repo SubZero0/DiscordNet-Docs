@@ -14,17 +14,18 @@ namespace DiscordNet.Query.Extensions
         {
             PropertyInfoWrapper first = list.First();
             DocsHttpResult result;
+            string pageUrl = $"{first.Parent.TypeInfo.Namespace}.{first.Parent.TypeInfo.Name}".SanitizeDocsUrl();
             try
             {
-                result = await BaseDisplay.GetWebDocsAsync($"https://discord.foxbot.me/docs/api/{first.Parent.Namespace}.{first.Parent.Name}.html", first);
+                result = await BaseDisplay.GetWebDocsAsync($"https://discord.foxbot.me/docs/api/{pageUrl}.html", first);
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.ToString());
-                result = new DocsHttpResult($"https://discord.foxbot.me/docs/api/{first.Parent.Namespace}.{first.Parent.Name}.html{PropertyToDocs(first)}");
+                result = new DocsHttpResult($"https://discord.foxbot.me/docs/api/{pageUrl}.html{PropertyToDocs(first)}");
             }
-            eab.Name = $"Property: {first.Parent.Namespace}.{first.Parent.Name}.{first.Property.Name} {(BaseDisplay.IsInherited(first) ? "(i)" : "")}";
-            eab.Url = $"https://discord.foxbot.me/docs/api/{first.Parent.Namespace}.{first.Parent.Name}.html{PropertyToDocs(first)}"; //or result.Url
+            eab.Name = $"Property: {first.Parent.TypeInfo.Namespace}.{first.Parent.DisplayName}.{first.Property.Name} {(BaseDisplay.IsInherited(first) ? "(i)" : "")}";
+            eab.Url = result.Url;//$"https://discord.foxbot.me/docs/api/{first.Parent.Namespace}.{first.Parent.Name}.html{PropertyToDocs(first)}";
             eb.AddField((x) =>
             {
                 x.IsInline = false;
@@ -64,7 +65,7 @@ namespace DiscordNet.Query.Extensions
         {
             if (BaseDisplay.IsInherited(pi))
                 return "";
-            return $"#{pi.Parent.Namespace.Replace('.', '_')}_{pi.Parent.Name}_{pi.Property.Name}";
+            return $"#{pi.Parent.TypeInfo.Namespace.Replace('.', '_')}_{pi.Parent.TypeInfo.Name}_{pi.Property.Name}";
         }
     }
 }

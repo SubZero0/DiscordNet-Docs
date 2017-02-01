@@ -17,16 +17,17 @@ namespace DiscordNet.Query.Extensions
         {
             MethodInfoWrapper first = list.First();
             DocsHttpResult result;
+            string pageUrl = $"{first.Parent.TypeInfo.Namespace}.{first.Parent.TypeInfo.Name}".SanitizeDocsUrl();
             try
             {
-                result = await BaseDisplay.GetWebDocsAsync($"https://discord.foxbot.me/docs/api/{first.Parent.Namespace}.{first.Parent.Name}.html", first);
+                result = await BaseDisplay.GetWebDocsAsync($"https://discord.foxbot.me/docs/api/{pageUrl}.html", first);
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.ToString());
-                result = new DocsHttpResult($"https://discord.foxbot.me/docs/api/{first.Parent.Namespace}.{first.Parent.Name}.html{MethodToDocs(first)}");
+                result = new DocsHttpResult($"https://discord.foxbot.me/docs/api/{pageUrl}.html{MethodToDocs(first)}");
             }
-            eab.Name = $"Method: {first.Parent.Namespace}.{first.Parent.Name}.{first.Method.Name}";
+            eab.Name = $"Method: {first.Parent.TypeInfo.Namespace}.{first.Parent.DisplayName}.{first.Method.Name}";
             eab.Url = result.Url;
             eb.AddField((x) =>
             {
@@ -55,28 +56,7 @@ namespace DiscordNet.Query.Extensions
                 x.Name = "Overloads:";
                 x.Value = String.Join("\n", list.OrderBy(y => BaseDisplay.IsInherited(y)).Select(y => $"``{i++}-``{(BaseDisplay.IsInherited(y) ? " (i)" : "")} {BuildMethod(y.Method)}"));
             });
-            /*var tips = ShowMethodsTips(list.Select(x => x.Method));
-            i = 1;
-            if (tips.Count != 0)
-                eb.AddField((x) =>
-                {
-                    x.IsInline = false;
-                    x.Name = "Tips & examples:";
-                    x.Value = String.Join("\n", tips.Select(y => $"``{i++}-`` {y}"));
-                });*/
             return eb;
-        }
-
-        private static List<string> ShowMethodsTips(IEnumerable<MethodInfo> list)
-        {
-            List<string> tips = new List<string>();
-            if (list.FirstOrDefault(x => CompareTypes(x.ReturnType, typeof(Action)) || x.GetParameters().FirstOrDefault(y => CompareTypes(y.ParameterType, typeof(Action))) != null) != null)
-                tips.Add("Action [only execute]: ``(x) => x.Something``");
-            if (list.FirstOrDefault(x => CompareTypes(x.ReturnType, typeof(Func<>)) || x.GetParameters().FirstOrDefault(y => CompareTypes(y.ParameterType, typeof(Func<>))) != null) != null)
-                tips.Add("Func [execute and return]: ``(x) => x.Something``");
-            if (list.FirstOrDefault(x => CompareTypes(x.ReturnType, typeof(Task)) || x.GetParameters().FirstOrDefault(y => CompareTypes(y.ParameterType, typeof(Task))) != null) != null)
-                tips.Add("Task: always remember to ``await`` if needed.");
-            return tips;
         }
 
         private static string MethodToDocs(MethodInfoWrapper mi, bool removeDiscord = false) //Always second option because the docs urls are too strange, removing the namespace one time and not another...
@@ -94,7 +74,7 @@ namespace DiscordNet.Query.Extensions
                 parameters += $"{format}_";
                 parameters_orig += $"{pi.ParameterType.ToString()}_";
             }
-            string final = $"#{mi.Parent.Namespace.Replace('.', '_')}_{mi.Parent.Name}_{mi.Method.Name}_{parameters}";
+            string final = $"#{mi.Parent.TypeInfo.Namespace.Replace('.', '_')}_{mi.Parent.TypeInfo.Name}_{mi.Method.Name}_{parameters}";
             if (final.Length > 68 && !removeDiscord) //This isnt how they select if they should remove the namespace...
                 return MethodToDocs(mi, true);
             return final;

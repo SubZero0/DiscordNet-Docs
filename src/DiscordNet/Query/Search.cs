@@ -43,12 +43,12 @@ namespace DiscordNet.Query
             List<object> list = new List<object>();
             foreach (object o in oldList)
             {
-                if (o is TypeInfo)
+                if (o is TypeInfoWrapper)
                 {
-                    TypeInfo r = (TypeInfo)o;
-                    if (!r.Namespace.StartsWith("Discord.API"))
+                    TypeInfoWrapper r = (TypeInfoWrapper)o;
+                    if (!r.TypeInfo.Namespace.StartsWith("Discord.API"))
                     {
-                        if (_result.Namespace != null && r.Namespace.IndexOf(_result.Namespace, StringComparison.OrdinalIgnoreCase) != -1)
+                        if (_result.Namespace != null && r.TypeInfo.Namespace.IndexOf(_result.Namespace, StringComparison.OrdinalIgnoreCase) != -1)
                             list.Add(o);
                         else if (_result.Namespace == null)
                             list.Add(o);
@@ -57,9 +57,9 @@ namespace DiscordNet.Query
                 else if (o is MethodInfoWrapper)
                 {
                     MethodInfoWrapper r = (MethodInfoWrapper)o;
-                    if (!r.Parent.Namespace.StartsWith("Discord.API"))
+                    if (!r.Parent.TypeInfo.Namespace.StartsWith("Discord.API"))
                     {
-                        if (_result.Namespace != null && $"{r.Parent.Namespace}.{r.Parent.Name}".IndexOf(_result.Namespace, StringComparison.OrdinalIgnoreCase) != -1)
+                        if (_result.Namespace != null && $"{r.Parent.TypeInfo.Namespace}.{r.Parent.DisplayName}".IndexOf(_result.Namespace, StringComparison.OrdinalIgnoreCase) != -1)
                             list.Add(o);
                         else if (_result.Namespace == null)
                             list.Add(o);
@@ -68,20 +68,20 @@ namespace DiscordNet.Query
                 else if (o is PropertyInfoWrapper)
                 {
                     PropertyInfoWrapper r = (PropertyInfoWrapper)o;
-                    if (!r.Parent.Namespace.StartsWith("Discord.API"))
+                    if (!r.Parent.TypeInfo.Namespace.StartsWith("Discord.API"))
                     {
-                        if (_result.Namespace != null && $"{r.Parent.Namespace}.{r.Parent.Name}".IndexOf(_result.Namespace, StringComparison.OrdinalIgnoreCase) != -1)
+                        if (_result.Namespace != null && $"{r.Parent.TypeInfo.Namespace}.{r.Parent.DisplayName}".IndexOf(_result.Namespace, StringComparison.OrdinalIgnoreCase) != -1)
                             list.Add(o);
                         else if (_result.Namespace == null)
                             list.Add(o);
                     }
                 }
-                else if (o is EventInfo)
+                else if (o is EventInfoWrapper)
                 {
-                    EventInfo r = (EventInfo)o;
-                    if (!r.DeclaringType.Namespace.StartsWith("Discord.API"))
+                    EventInfoWrapper r = (EventInfoWrapper)o;
+                    if (!r.Parent.TypeInfo.Namespace.StartsWith("Discord.API"))
                     {
-                        if (_result.Namespace != null && $"{r.DeclaringType.Namespace}.{r.DeclaringType.Name}".IndexOf(_result.Namespace, StringComparison.OrdinalIgnoreCase) != -1)
+                        if (_result.Namespace != null && $"{r.Parent.TypeInfo.Namespace}.{r.Parent.DisplayName}".IndexOf(_result.Namespace, StringComparison.OrdinalIgnoreCase) != -1)
                             list.Add(o);
                         else if (_result.Namespace == null)
                             list.Add(o);

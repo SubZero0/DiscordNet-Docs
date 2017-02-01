@@ -11,21 +11,22 @@ namespace DiscordNet.Query.Extensions
 {
     public static class TypeDisplay
     {
-        public static async Task<EmbedBuilder> ShowTypesAsync(this ResultDisplay rDisplay, EmbedBuilder eb, EmbedAuthorBuilder eab, IEnumerable<TypeInfo> list)
+        public static async Task<EmbedBuilder> ShowTypesAsync(this ResultDisplay rDisplay, EmbedBuilder eb, EmbedAuthorBuilder eab, IEnumerable<TypeInfoWrapper> list)
         {
-            TypeInfo first = list.First();
+            TypeInfoWrapper first = list.First();
             DocsHttpResult result;
+            string pageUrl = $"{first.TypeInfo.Namespace}.{first.TypeInfo.Name}".SanitizeDocsUrl();
             try
             {
-                result = await BaseDisplay.GetWebDocsAsync($"https://discord.foxbot.me/docs/api/{first.Namespace}.{first.Name}.html", first);
+                result = await BaseDisplay.GetWebDocsAsync($"https://discord.foxbot.me/docs/api/{pageUrl}.html", first);
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.ToString());
-                result = new DocsHttpResult($"https://discord.foxbot.me/docs/api/{first.Namespace}.{first.Name}.html");
+                result = new DocsHttpResult($"https://discord.foxbot.me/docs/api/{pageUrl}.html");
             }
-            eab.Name = $"{(first.IsInterface ? "Interface" : "Type")}: {first.Namespace}.{first.Name}";
-            eab.Url = $"https://discord.foxbot.me/docs/api/{first.Namespace}.{first.Name}.html"; //or result.Url
+            eab.Name = $"{(first.TypeInfo.IsInterface ? "Interface" : "Type")}: {first.TypeInfo.Namespace}.{first.DisplayName}";
+            eab.Url = result.Url;//$"https://discord.foxbot.me/docs/api/{first.Namespace}.{first.Name}.html";
             eb.AddField((x) =>
             {
                 x.IsInline = false;

@@ -1,5 +1,6 @@
 ﻿using Discord;
 using DiscordNet.Query.Results;
+using DiscordNet.Query.Wrappers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,21 +11,22 @@ namespace DiscordNet.Query.Extensions
 {
     public static class EventDisplay
     {
-        public static async Task<EmbedBuilder> ShowEventsAsync(EmbedBuilder eb, EmbedAuthorBuilder eab, IEnumerable<EventInfo> list)
+        public static async Task<EmbedBuilder> ShowEventsAsync(EmbedBuilder eb, EmbedAuthorBuilder eab, IEnumerable<EventInfoWrapper> list)
         {
-            EventInfo first = list.First();
+            EventInfoWrapper first = list.First();
             DocsHttpResult result;
+            string pageUrl = $"{first.Parent.TypeInfo.Namespace}.{first.Parent.TypeInfo.Name}".SanitizeDocsUrl();
             try
             {
-                result = await BaseDisplay.GetWebDocsAsync($"https://discord.foxbot.me/docs/api/{first.DeclaringType.Namespace}.{first.DeclaringType.Name}.html", first);
+                result = await BaseDisplay.GetWebDocsAsync($"https://discord.foxbot.me/docs/api/{pageUrl}.html", first);
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.ToString());
-                result = new DocsHttpResult($"https://discord.foxbot.me/docs/api/{first.DeclaringType.Namespace}.{first.DeclaringType.Name}.html{EventToDocs(first)}");
+                result = new DocsHttpResult($"https://discord.foxbot.me/docs/api/{pageUrl}.html{EventToDocs(first)}");
             }
-            eab.Name = $"Event: {first.DeclaringType.Namespace}.{first.DeclaringType.Name}.{first.Name}";
-            eab.Url = $"https://discord.foxbot.me/docs/api/{first.DeclaringType.Namespace}.{first.DeclaringType.Name}.html{EventToDocs(first)}"; //or result.Url
+            eab.Name = $"Event: {first.Parent.TypeInfo.Namespace}.{first.Parent.DisplayName}.{first.Event.Name}";
+            eab.Url = result.Url; //$"https://discord.foxbot.me/docs/api/{first.DeclaringType.Namespace}.{first.DeclaringType.Name}.html{EventToDocs(first)}";
             eb.AddField((x) =>
             {
                 x.IsInline = false;
@@ -48,9 +50,9 @@ namespace DiscordNet.Query.Extensions
             return eb;
         }
 
-        private static string EventToDocs(EventInfo ei)
+        private static string EventToDocs(EventInfoWrapper ei)
         {
-            return $"#{ei.DeclaringType.Namespace.Replace('.', '_')}_{ei.DeclaringType.Name}_{ei.Name}";
+            return $"#{ei.Parent.TypeInfo.Namespace.Replace('.', '_')}_{ei.Parent.TypeInfo.Name}_{ei.Event.Name}";
         }
     }
 }

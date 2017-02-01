@@ -34,14 +34,14 @@ namespace DiscordNet.Query
             EmbedAuthorBuilder eab = new EmbedAuthorBuilder();
             eab.IconUrl = "http://i.imgur.com/XW4RU5e.png";
             EmbedBuilder eb = new EmbedBuilder().WithAuthor(eab);
-            if (first is TypeInfo)
-                eb = await this.ShowTypesAsync(eb, eab, o.Select(x => (TypeInfo)x));
+            if (first is TypeInfoWrapper)
+                eb = await this.ShowTypesAsync(eb, eab, o.Select(x => (TypeInfoWrapper)x));
             else if (first is MethodInfoWrapper)
                 eb = await MethodDisplay.ShowMethodsAsync(eb, eab, o.Select(x => (MethodInfoWrapper)x));
             else if(first is PropertyInfoWrapper)
                 eb = await PropertyDisplay.ShowPropertiesAsync(eb, eab, o.Select(x => (PropertyInfoWrapper)x));
-            else if (first is EventInfo)
-                eb = await EventDisplay.ShowEventsAsync(eb, eab, o.Select(x => (EventInfo)x));
+            else if (first is EventInfoWrapper)
+                eb = await EventDisplay.ShowEventsAsync(eb, eab, o.Select(x => (EventInfoWrapper)x));
             return eb;
         }
 
