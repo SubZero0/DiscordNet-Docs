@@ -8,11 +8,11 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace DiscordNet.Query.Extensions
+namespace DiscordNet.Query
 {
-    public static class BaseDisplay
+    public partial class ResultDisplay
     {
-        public static async Task<DocsHttpResult> GetWebDocsAsync(string url, object o)
+        private async Task<DocsHttpResult> GetWebDocsAsync(string url, object o)
         {
             string summary, example = null;
             string search = GetDocsUrlPath(o);
@@ -35,7 +35,7 @@ namespace DiscordNet.Query.Extensions
             return new DocsHttpResult(url, summary, example);
         }
 
-        private static async Task<string> GetWebDocsHtmlAsync(string url, object o)
+        private async Task<string> GetWebDocsHtmlAsync(string url, object o)
         {
             string html;
             if (IsInherited(o))
@@ -46,7 +46,7 @@ namespace DiscordNet.Query.Extensions
                     if (!mi.Method.DeclaringType.Namespace.StartsWith("Discord"))
                         return "";
                     else
-                        url = $"https://discord.foxbot.me/docs/api/{$"{mi.Method.DeclaringType.Namespace}.{mi.Method.DeclaringType.Name}".SanitizeDocsUrl()}.html";
+                        url = $"https://discord.foxbot.me/docs/api/{SanitizeDocsUrl($"{mi.Method.DeclaringType.Namespace}.{mi.Method.DeclaringType.Name}")}.html";
                 }
                 else
                 {
@@ -54,7 +54,7 @@ namespace DiscordNet.Query.Extensions
                     if (!pi.Property.DeclaringType.Namespace.StartsWith("Discord"))
                         return "";
                     else
-                        url = $"https://discord.foxbot.me/docs/api/{$"{pi.Property.DeclaringType.Namespace}.{pi.Property.DeclaringType.Name}".SanitizeDocsUrl()}.html";
+                        url = $"https://discord.foxbot.me/docs/api/{SanitizeDocsUrl($"{pi.Property.DeclaringType.Namespace}.{pi.Property.DeclaringType.Name}")}.html";
                 }
             }
             using (var httpClient = new HttpClient())
@@ -67,7 +67,7 @@ namespace DiscordNet.Query.Extensions
             return html;
         }
 
-        private static string GetDocsUrlPath(object o)
+        private string GetDocsUrlPath(object o)
         {
             bool useParent = !IsInherited(o);
             Regex rgx = new Regex("\\W+");
@@ -95,7 +95,7 @@ namespace DiscordNet.Query.Extensions
         }
 
         //Generic types will return like Type`1 and the docs change to Type-1
-        public static string SanitizeDocsUrl(this string text)
+        private string SanitizeDocsUrl(string text)
         {
             return text.Replace('`', '-');
         }
@@ -115,7 +115,7 @@ namespace DiscordNet.Query.Extensions
             return false;
         }
 
-        public static List<string> GetPaths(IEnumerable<object> list)
+        private List<string> GetPaths(IEnumerable<object> list)
         {
             List<string> newlist = new List<string>();
             foreach (object o in list)
@@ -148,7 +148,7 @@ namespace DiscordNet.Query.Extensions
             return o.GetType().ToString();
         }
 
-        public static string BuildType(Type type)
+        private string BuildType(Type type)
         {
             string name = type.Name;
             int idx;
@@ -160,7 +160,7 @@ namespace DiscordNet.Query.Extensions
             return $"{name}{generic}";
         }
 
-        public static string StripTags(string source)
+        private string StripTags(string source)
         {
             char[] array = new char[source.Length];
             int arrayIndex = 0;

@@ -4,21 +4,20 @@ using DiscordNet.Query.Wrappers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 
-namespace DiscordNet.Query.Extensions
+namespace DiscordNet.Query
 {
-    public static class EventDisplay
+    public partial class ResultDisplay
     {
-        public static async Task<EmbedBuilder> ShowEventsAsync(EmbedBuilder eb, EmbedAuthorBuilder eab, IEnumerable<EventInfoWrapper> list)
+        private async Task<EmbedBuilder> ShowEventsAsync(EmbedBuilder eb, EmbedAuthorBuilder eab, IEnumerable<EventInfoWrapper> list)
         {
             EventInfoWrapper first = list.First();
             DocsHttpResult result;
-            string pageUrl = $"{first.Parent.TypeInfo.Namespace}.{first.Parent.TypeInfo.Name}".SanitizeDocsUrl();
+            string pageUrl = SanitizeDocsUrl($"{first.Parent.TypeInfo.Namespace}.{first.Parent.TypeInfo.Name}");
             try
             {
-                result = await BaseDisplay.GetWebDocsAsync($"https://discord.foxbot.me/docs/api/{pageUrl}.html", first);
+                result = await GetWebDocsAsync($"https://discord.foxbot.me/docs/api/{pageUrl}.html", first);
             }
             catch (Exception e)
             {
@@ -50,7 +49,7 @@ namespace DiscordNet.Query.Extensions
             return eb;
         }
 
-        private static string EventToDocs(EventInfoWrapper ei)
+        private string EventToDocs(EventInfoWrapper ei)
         {
             return $"#{ei.Parent.TypeInfo.Namespace.Replace('.', '_')}_{ei.Parent.TypeInfo.Name}_{ei.Event.Name}";
         }

@@ -5,14 +5,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using DiscordNet.Query.Extensions;
 
 namespace DiscordNet.Query
 {
-    public class ResultDisplay
+    public partial class ResultDisplay
     {
         private SearchResult<object> _result;
-        protected internal Cache _cache;
+        private Cache _cache;
         public ResultDisplay(SearchResult<object> result, Cache cache)
         {
             _result = result;
@@ -21,7 +20,7 @@ namespace DiscordNet.Query
 
         public async Task<EmbedBuilder> RunAsync()
         {
-            var list = _result.List.GroupBy(x => BaseDisplay.GetPath(x, false));
+            var list = _result.List.GroupBy(x => GetPath(x, false));
             if (list.Count() == 1)
                 return await ShowAsync(list.ElementAt(0));
             else
@@ -35,13 +34,13 @@ namespace DiscordNet.Query
             eab.IconUrl = "http://i.imgur.com/XW4RU5e.png";
             EmbedBuilder eb = new EmbedBuilder().WithAuthor(eab);
             if (first is TypeInfoWrapper)
-                eb = await this.ShowTypesAsync(eb, eab, o.Select(x => (TypeInfoWrapper)x));
+                eb = await ShowTypesAsync(eb, eab, o.Select(x => (TypeInfoWrapper)x));
             else if (first is MethodInfoWrapper)
-                eb = await MethodDisplay.ShowMethodsAsync(eb, eab, o.Select(x => (MethodInfoWrapper)x));
+                eb = await ShowMethodsAsync(eb, eab, o.Select(x => (MethodInfoWrapper)x));
             else if(first is PropertyInfoWrapper)
-                eb = await PropertyDisplay.ShowPropertiesAsync(eb, eab, o.Select(x => (PropertyInfoWrapper)x));
+                eb = await ShowPropertiesAsync(eb, eab, o.Select(x => (PropertyInfoWrapper)x));
             else if (first is EventInfoWrapper)
-                eb = await EventDisplay.ShowEventsAsync(eb, eab, o.Select(x => (EventInfoWrapper)x));
+                eb = await ShowEventsAsync(eb, eab, o.Select(x => (EventInfoWrapper)x));
             return eb;
         }
 
@@ -51,12 +50,12 @@ namespace DiscordNet.Query
             if (obj.Count() > 10)
             {
                 eb.Title = "Too many results, try filtering your search. Some results:";
-                eb.Description = string.Join("\n", BaseDisplay.GetPaths(obj.Take(10)));
+                eb.Description = string.Join("\n", GetPaths(obj.Take(10)));
             }
             else
             {
                 eb.Title = "Did you mean:";
-                eb.Description = string.Join("\n", BaseDisplay.GetPaths(obj));
+                eb.Description = string.Join("\n", GetPaths(obj));
                 eb.Footer = new EmbedFooterBuilder().WithText("Type help to see keywords to filter your query.");
             }
             return eb;

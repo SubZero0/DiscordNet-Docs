@@ -7,18 +7,18 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 
-namespace DiscordNet.Query.Extensions
+namespace DiscordNet.Query
 {
-    public static class TypeDisplay
+    public partial class ResultDisplay
     {
-        public static async Task<EmbedBuilder> ShowTypesAsync(this ResultDisplay rDisplay, EmbedBuilder eb, EmbedAuthorBuilder eab, IEnumerable<TypeInfoWrapper> list)
+        private async Task<EmbedBuilder> ShowTypesAsync(EmbedBuilder eb, EmbedAuthorBuilder eab, IEnumerable<TypeInfoWrapper> list)
         {
             TypeInfoWrapper first = list.First();
             DocsHttpResult result;
-            string pageUrl = $"{first.TypeInfo.Namespace}.{first.TypeInfo.Name}".SanitizeDocsUrl();
+            string pageUrl = SanitizeDocsUrl($"{first.TypeInfo.Namespace}.{first.TypeInfo.Name}");
             try
             {
-                result = await BaseDisplay.GetWebDocsAsync($"https://discord.foxbot.me/docs/api/{pageUrl}.html", first);
+                result = await GetWebDocsAsync($"https://discord.foxbot.me/docs/api/{pageUrl}.html", first);
             }
             catch (Exception e)
             {
@@ -47,7 +47,7 @@ namespace DiscordNet.Query.Extensions
                     x.Name = "Example:";
                     x.Value = result.Example;
                 });
-            CacheBag cb = rDisplay._cache.GetCacheBag(first);
+            CacheBag cb = _cache.GetCacheBag(first);
             if (cb.Methods.Count != 0)
             {
                 int now = 0, max = (3 < cb.Methods.Count ? 3 : cb.Methods.Count);
@@ -70,7 +70,7 @@ namespace DiscordNet.Query.Extensions
                 {
                     x.IsInline = true;
                     x.Name = $"Some methods ({max}/{cb.Methods.Count}):";
-                    x.Value = String.Join("\n", methods.Values.Select(y => $"``{i++}-``{(BaseDisplay.IsInherited(new MethodInfoWrapper(first, y)) ? " (i)" : "")} {y.Name}(...)"));
+                    x.Value = String.Join("\n", methods.Values.Select(y => $"``{i++}-``{(IsInherited(new MethodInfoWrapper(first, y)) ? " (i)" : "")} {y.Name}(...)"));
                 });
             }
             if (cb.Properties.Count != 0)
@@ -95,7 +95,7 @@ namespace DiscordNet.Query.Extensions
                 {
                     x.IsInline = true;
                     x.Name = $"Some properties ({max}/{cb.Properties.Count}):";
-                    x.Value = String.Join("\n", properties.Values.Select(y => $"``{i++}-``{(BaseDisplay.IsInherited(new PropertyInfoWrapper(first, y)) ? " (i)" : "")} {y.Name}"));
+                    x.Value = String.Join("\n", properties.Values.Select(y => $"``{i++}-``{(IsInherited(new PropertyInfoWrapper(first, y)) ? " (i)" : "")} {y.Name}"));
                 });
             }
             return eb;

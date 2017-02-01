@@ -1,5 +1,4 @@
-﻿using DiscordNet.Query.Extensions;
-using DiscordNet.Query.Results;
+﻿using DiscordNet.Query.Results;
 using DiscordNet.Query.Wrappers;
 using System;
 using System.Collections.Generic;
@@ -33,7 +32,7 @@ namespace DiscordNet.Query
             if (_result.TakeFirst && found.Count > 0)
             {
                 var first = found.First();
-                return new SearchResult<object>(found.Where(x => BaseDisplay.GetPath(x, false) == BaseDisplay.GetPath(first, false)).ToList());
+                return new SearchResult<object>(found.Where(x => ResultDisplay.GetPath(x, false) == ResultDisplay.GetPath(first, false)).ToList());
             }
             return new SearchResult<object>(found);
         }

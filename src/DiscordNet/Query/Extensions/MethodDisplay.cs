@@ -9,18 +9,18 @@ using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace DiscordNet.Query.Extensions
+namespace DiscordNet.Query
 {
-    public static class MethodDisplay
+    public partial class ResultDisplay
     {
-        public static async Task<EmbedBuilder> ShowMethodsAsync(EmbedBuilder eb, EmbedAuthorBuilder eab, IEnumerable<MethodInfoWrapper> list)
+        private async Task<EmbedBuilder> ShowMethodsAsync(EmbedBuilder eb, EmbedAuthorBuilder eab, IEnumerable<MethodInfoWrapper> list)
         {
             MethodInfoWrapper first = list.First();
             DocsHttpResult result;
-            string pageUrl = $"{first.Parent.TypeInfo.Namespace}.{first.Parent.TypeInfo.Name}".SanitizeDocsUrl();
+            string pageUrl = SanitizeDocsUrl($"{first.Parent.TypeInfo.Namespace}.{first.Parent.TypeInfo.Name}");
             try
             {
-                result = await BaseDisplay.GetWebDocsAsync($"https://discord.foxbot.me/docs/api/{pageUrl}.html", first);
+                result = await GetWebDocsAsync($"https://discord.foxbot.me/docs/api/{pageUrl}.html", first);
             }
             catch (Exception e)
             {
@@ -54,14 +54,14 @@ namespace DiscordNet.Query.Extensions
             {
                 x.IsInline = false;
                 x.Name = "Overloads:";
-                x.Value = String.Join("\n", list.OrderBy(y => BaseDisplay.IsInherited(y)).Select(y => $"``{i++}-``{(BaseDisplay.IsInherited(y) ? " (i)" : "")} {BuildMethod(y.Method)}"));
+                x.Value = String.Join("\n", list.OrderBy(y => IsInherited(y)).Select(y => $"``{i++}-``{(IsInherited(y) ? " (i)" : "")} {BuildMethod(y.Method)}"));
             });
             return eb;
         }
 
-        private static string MethodToDocs(MethodInfoWrapper mi, bool removeDiscord = false) //Always second option because the docs urls are too strange, removing the namespace one time and not another...
+        private string MethodToDocs(MethodInfoWrapper mi, bool removeDiscord = false) //Always second option because the docs urls are too strange, removing the namespace one time and not another...
         {
-            if (BaseDisplay.IsInherited(mi))
+            if (IsInherited(mi))
                 return "";
             Regex rgx = new Regex("[^a-zA-Z0-9_][^a-zA-Z]*");
             string parameters = "";
@@ -80,29 +80,29 @@ namespace DiscordNet.Query.Extensions
             return final;
         }
 
-        private static bool CompareTypes(Type t1, Type t2)
+        private bool CompareTypes(Type t1, Type t2)
         {
             return t1.FullName.StartsWith(t2.FullName);
         }
 
-        private static string BuildMethod(MethodInfo mi)
+        private string BuildMethod(MethodInfo mi)
         {
             IEnumerable<string> parameters;
             if (mi.IsDefined(typeof(ExtensionAttribute)))
-                parameters = mi.GetParameters().Skip(1).Select(x => $"{BaseDisplay.BuildType(x.ParameterType)} {x.Name}{GetParameterDefaultValue(x)}");
+                parameters = mi.GetParameters().Skip(1).Select(x => $"{BuildType(x.ParameterType)} {x.Name}{GetParameterDefaultValue(x)}");
             else
-                parameters = mi.GetParameters().Select(x => $"{BuildPreParameter(x)}{BaseDisplay.BuildType(x.ParameterType)} {x.Name}{GetParameterDefaultValue(x)}");
-            return $"{BaseDisplay.BuildType(mi.ReturnType)} {mi.Name}({String.Join(", ", parameters)})";
+                parameters = mi.GetParameters().Select(x => $"{BuildPreParameter(x)}{BuildType(x.ParameterType)} {x.Name}{GetParameterDefaultValue(x)}");
+            return $"{BuildType(mi.ReturnType)} {mi.Name}({String.Join(", ", parameters)})";
         }
 
-        private static string BuildPreParameter(ParameterInfo pi)
+        private string BuildPreParameter(ParameterInfo pi)
         {
             if (pi.IsOut)
                 return "out ";
             return "";
         }
 
-        private static string GetParameterDefaultValue(ParameterInfo pi)
+        private string GetParameterDefaultValue(ParameterInfo pi)
         {
             if (pi.HasDefaultValue)
                 return $" = {pi.DefaultValue?.ToString() ?? "null"}";
