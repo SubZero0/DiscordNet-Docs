@@ -160,7 +160,7 @@ namespace DiscordNet.Query
                 TypeInfoWrapper tiw = new TypeInfoWrapper(type.GetTypeInfo());
                 CacheBag cb = new CacheBag();
                 allTypes[tiw] = cb;
-                foreach (MethodInfo mi in type.GetMethods())
+                foreach (MethodInfo mi in type.GetRuntimeMethods())
                 {
                     if (mi.IsPublic && !mi.IsSpecialName)
                         cb.Methods.Add(mi);
@@ -172,26 +172,28 @@ namespace DiscordNet.Query
                             extensions[tiw].Add(mi);
                     }
                 }
-                foreach (PropertyInfo pi in type.GetProperties())
+                foreach (PropertyInfo pi in type.GetRuntimeProperties())
                     cb.Properties.Add(pi);
-                foreach (EventInfo ei in type.GetEvents())
+                foreach (EventInfo ei in type.GetRuntimeEvents())
                     cb.Events.Add(ei);
-                foreach (Type t in type.GetInterfaces())
-                    LoadInterface(t, tiw);
+                if(type.GetTypeInfo().IsInterface)
+                    foreach (Type t in type.GetInterfaces())
+                        LoadInterface(t, tiw);
             }
         }
 
         private void LoadInterface(Type _interface, TypeInfoWrapper parent)
         {
-            LoadType(_interface);
-            foreach (MethodInfo mi in _interface.GetMethods())
-                if(mi.IsPublic && !mi.IsSpecialName)
-                    if(!allTypes[parent].Methods.Contains(mi))
+            if (_interface.Namespace.StartsWith("Discord"))
+                LoadType(_interface);
+            foreach (MethodInfo mi in _interface.GetRuntimeMethods())
+                if (mi.IsPublic && !mi.IsSpecialName)
+                    if (!allTypes[parent].Methods.Contains(mi))
                         allTypes[parent].Methods.Add(mi);
-            foreach (PropertyInfo pi in _interface.GetProperties())
+            foreach (PropertyInfo pi in _interface.GetRuntimeProperties())
                 if (!allTypes[parent].Properties.Contains(pi))
                     allTypes[parent].Properties.Add(pi);
-            foreach (EventInfo ei in _interface.GetEvents())
+            foreach (EventInfo ei in _interface.GetRuntimeEvents())
                 if (!allTypes[parent].Events.Contains(ei))
                     allTypes[parent].Events.Add(ei);
             foreach (Type type in _interface.GetInterfaces())
