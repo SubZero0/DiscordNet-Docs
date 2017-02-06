@@ -155,14 +155,16 @@ namespace DiscordNet.Query
 
         private void LoadType(Type type)
         {
-            if(allTypes.Keys.FirstOrDefault(x => x.TypeInfo == type.GetTypeInfo()) == null)
+            if (type.IsGenericParameter)
+                type = type.GetGenericTypeDefinition();
+            if (allTypes.Keys.FirstOrDefault(x => x.TypeInfo == type.GetTypeInfo()) == null)
             {
                 TypeInfoWrapper tiw = new TypeInfoWrapper(type.GetTypeInfo());
                 CacheBag cb = new CacheBag();
                 allTypes[tiw] = cb;
                 foreach (MethodInfo mi in type.GetRuntimeMethods())
                 {
-                    if (mi.IsPublic && !mi.IsSpecialName)
+                    if (mi.DeclaringType.Namespace.StartsWith("Discord") && (mi.IsPublic || mi.IsFamily) && !mi.IsSpecialName && !cb.Methods.Contains(mi))
                         cb.Methods.Add(mi);
                     if (mi.IsDefined(typeof(ExtensionAttribute), false) && mi.IsStatic && mi.IsPublic)
                     {
@@ -187,7 +189,7 @@ namespace DiscordNet.Query
             if (_interface.Namespace.StartsWith("Discord"))
                 LoadType(_interface);
             foreach (MethodInfo mi in _interface.GetRuntimeMethods())
-                if (mi.IsPublic && !mi.IsSpecialName)
+                if (mi.DeclaringType.Namespace.StartsWith("Discord") && (mi.IsPublic || mi.IsFamily) && !mi.IsSpecialName && !allTypes[parent].Methods.Contains(mi))
                     if (!allTypes[parent].Methods.Contains(mi))
                         allTypes[parent].Methods.Add(mi);
             foreach (PropertyInfo pi in _interface.GetRuntimeProperties())

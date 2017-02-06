@@ -13,7 +13,7 @@ namespace DiscordNet.Query.Wrappers
             DisplayName = typeInfo.Name;
             int idx;
             if ((idx = DisplayName.IndexOf('`')) != -1)
-                DisplayName = DisplayName.Substring(0, idx);
+                DisplayName = $"{DisplayName.Substring(0, idx)}<{typeInfo.GetGenericArguments()[0]}>"; //TODO: Only valid with one generic argument, could be more
         }
     }
 }

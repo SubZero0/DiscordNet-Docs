@@ -40,9 +40,10 @@ namespace DiscordNet.Handlers
         {
             var msg = parameterMessage as SocketUserMessage;
             if (msg == null) return Task.CompletedTask;
-            if (msg.Channel.Name != "dotnet_discord-net" && msg.Channel.Name != "testing") return Task.CompletedTask;
+            if (msg.Author.IsBot) return Task.CompletedTask;
+            if (msg.Channel.Name != "dotnet_discord-net" && msg.Channel.Name != "testing" && msg.Channel.Name != "playground") return Task.CompletedTask;
             int argPos = 0;
-            if (!(msg.HasMentionPrefix(client.CurrentUser, ref argPos) || msg.HasStringPrefix(MainHandler.Prefix, ref argPos))) return Task.CompletedTask;
+            if (!(msg.HasMentionPrefix(client.CurrentUser, ref argPos) /*|| msg.HasStringPrefix(MainHandler.Prefix, ref argPos)*/)) return Task.CompletedTask;
             var _ = HandleCommandAsync(msg, argPos);
             return Task.CompletedTask;
         }

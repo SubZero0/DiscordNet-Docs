@@ -3,6 +3,7 @@ using DiscordNet.Query.Wrappers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -24,7 +25,7 @@ namespace DiscordNet.Query
                 anchor = anchor.Substring(0, anchor.IndexOf('"'));
                 summary = block.Substring(block.IndexOf("summary\">") + 9);
                 summary = summary.Substring(0, summary.IndexOf("</div>"));
-                summary = StripTags(summary);
+                summary = WebUtility.HtmlDecode(StripTags(summary));
                 /*string example = block.Substring(block.IndexOf("example\">")); //TODO: Find this
                 summary = summary.Substring(0, summary.IndexOf("</div>"));*/
                 if (!(o is TypeInfoWrapper) && !IsInherited(o))
