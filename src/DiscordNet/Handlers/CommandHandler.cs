@@ -22,7 +22,6 @@ namespace DiscordNet.Handlers
             this.MainHandler = MainHandler;
             client = _map.Get<DiscordSocketClient>();
             commands = new CommandService();
-            _map.Add(commands);
             map = _map;
 
             await commands.AddModulesAsync(Assembly.GetEntryAssembly());
@@ -54,31 +53,24 @@ namespace DiscordNet.Handlers
             var result = await commands.ExecuteAsync(context, argPos, map);
             if (!result.IsSuccess && result.Error != CommandError.UnknownCommand)
                 await msg.Channel.SendMessageAsync(result.ErrorReason);
-            else if(!result.IsSuccess)
+            else if (!result.IsSuccess)
             {
                 string query = msg.Content.Substring(argPos);
-                if (query == "")
+                if (!MainHandler.QueryHandler.IsReady())
                 {
-                    await msg.Channel.SendMessageAsync("Docs: https://discord.foxbot.me/docs/ \nType ``@mention [query]`` to search the docs.\nOr ``@mention help`` if you don't know how.");
+                    await msg.Channel.SendMessageAsync("Loading cache..."); //TODO: Change message
                 }
                 else
                 {
-                    if (!MainHandler.QueryHandler.IsReady())
+                    try
                     {
-                        await msg.Channel.SendMessageAsync("Loading cache..."); //TODO: Change message
+                        var tuple = await MainHandler.QueryHandler.RunAsync(query);
+                        await msg.Channel.SendMessageAsync(tuple.Item1, false, tuple.Item2);
                     }
-                    else
+                    catch (Exception e)
                     {
-                        try
-                        {
-                            var tuple = await MainHandler.QueryHandler.RunAsync(query);
-                            await msg.Channel.SendMessageAsync(tuple.Item1, false, tuple.Item2);
-                        }
-                        catch (Exception e)
-                        {
-                            await msg.Channel.SendMessageAsync("Uh-oh... I think some pipes have broken...");
-                            Console.WriteLine(e.ToString());
-                        }
+                        await msg.Channel.SendMessageAsync("Uh-oh... I think some pipes have broken...");
+                        Console.WriteLine(e.ToString());
                     }
                 }
             }

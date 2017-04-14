@@ -24,6 +24,11 @@ namespace DiscordNet
                 Console.WriteLine($"{message.ToString()}");
                 return Task.CompletedTask;
             };
+            Discord.Ready += () =>
+            {
+                Console.WriteLine($"Connected!");
+                return Task.CompletedTask;
+            };
 
             var map = new DependencyMap();
             map.Add(Discord);
@@ -32,9 +37,7 @@ namespace DiscordNet
             await MainHandler.InitializeEarlyAsync(map);
 
             await Discord.LoginAsync(TokenType.Bot, "...");
-            await Discord.ConnectAsync();
-            Console.WriteLine($"Connected!");
-
+            await Discord.StartAsync();
             await Task.Delay(-1);
         }
     }

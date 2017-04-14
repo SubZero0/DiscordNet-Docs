@@ -13,6 +13,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace DiscordNet.Modules
@@ -24,15 +25,27 @@ namespace DiscordNet.Modules
         [Summary("Delete all the messages from this bot within the last X messages")]
         public async Task Clean(int messages = 30)
         {
+            if (messages > 50)
+                messages = 50;
+            else if (messages < 2)
+                messages = 2;
             var msgs = await Context.Channel.GetMessagesAsync(messages).Flatten();
             msgs = msgs.Where(x => x.Author.Id == Context.Client.CurrentUser.Id);
             foreach (IMessage msg in msgs)
                 await msg.DeleteAsync();
         }
 
-        [Command("guide")]
+        [Command("docs")]
+        [Summary("Show the docs url")]
+        public async Task Docs()
+        {
+            await ReplyAsync("Docs: https://discord.foxbot.me/docs/");
+        }
+
+        [Command("guides")]
+        [Alias("guide")]
         [Summary("Show the url of a guide")]
-        public async Task Guide([Remainder] string guide = null)
+        public async Task Guides([Remainder] string guide = null)
         {
             string html;
             using (var httpClient = new HttpClient())
@@ -42,23 +55,71 @@ namespace DiscordNet.Modules
                     throw new Exception($"An error occurred: {res.ReasonPhrase}");
                 html = await res.Content.ReadAsStringAsync();
             }
+            Dictionary<string, Dictionary<string, string>> guides = new Dictionary<string, Dictionary<string, string>>();
             var separate = html.Split(new string[] { "\n" }, StringSplitOptions.RemoveEmptyEntries);
-            Dictionary<string, string> guides = new Dictionary<string, string>();
-            for (int i = 0; i < separate.Length; i += 2)
+            string lastname = "";
+            for (int i = 0; i < separate.Length; i++)
             {
-                var key = separate[i].Split(':')[1].Trim();
-                var value = separate[i+1].Split(':')[1].Trim();
-                guides[key] = value;
+                string line = separate[i].Trim();
+                if (line.StartsWith("- name:"))
+                {
+                    lastname = line.Split(new string[] { "- name:" }, StringSplitOptions.None)[1].Trim();
+                }
+                else if (line.StartsWith("items:"))
+                {
+                    guides[lastname] = new Dictionary<string, string>();
+                }
+                else if (line.StartsWith("href:"))
+                {
+                    guides.Last().Value[lastname] = line.Split(new string[] { "href:" }, StringSplitOptions.None)[1].Trim();
+                }
             }
-            if(guide == null)
-                await ReplyAsync($"**Guides:** {string.Join(", ", guides.Select(x => x.Key))}\nChoose with: guide [name]");
+            StringBuilder sb = new StringBuilder();
+            EmbedAuthorBuilder eab = new EmbedAuthorBuilder { IconUrl = Context.Client.CurrentUser.GetAvatarUrl() };
+            if (guide == null)
+            {
+                eab.Name = "Guides";
+                foreach (string category in guides.Keys)
+                {
+                    sb.AppendLine($"**{category}**");
+                    foreach (string subcategory in guides[category].Keys)
+                        sb.AppendLine($"- [{subcategory}](https://discord.foxbot.me/docs/guides/{guides[category][subcategory]})");
+                }
+            }
             else
             {
-                var results = guides.Where(x => x.Key.IndexOf(guide, StringComparison.OrdinalIgnoreCase) != -1);
-                if(results.Count() != 1)
-                    await ReplyAsync($"**Did you mean:** {string.Join(", ", results.Select(x => x.Key))}\nChoose with: guide [name]");
-                else
-                    await ReplyAsync($"{results.First().Key}: https://discord.foxbot.me/docs/guides/{results.First().Value.Replace(".md", ".html")}");
+                guide = guide.ToLower();
+                foreach (string category in guides.Keys)
+                {
+                    eab.Name = $"Guide: {category}";
+                    bool add = false;
+                    if (category.IndexOf(guide, StringComparison.OrdinalIgnoreCase) != -1)
+                        add = true;
+                    else
+                        foreach (string subcategory in guides[category].Keys)
+                            if (subcategory.IndexOf(guide, StringComparison.OrdinalIgnoreCase) != -1)
+                                add = true;
+                    if(add)
+                    {
+                        foreach (string subcategory in guides[category].Keys)
+                            sb.AppendLine($"- [{subcategory}](https://discord.foxbot.me/docs/guides/{guides[category][subcategory]})");
+                        break;
+                    }
+                }
+            }
+            string result = sb.ToString();
+            if (string.IsNullOrEmpty(result))
+            {
+                await ReplyAsync("No guide found.");
+            }
+            else
+            {
+                EmbedBuilder eb = new EmbedBuilder()
+                {
+                    Author = eab,
+                    Description = result
+                };
+                await ReplyAsync("", embed: eb);
             }
         }
 
@@ -83,8 +144,8 @@ namespace DiscordNet.Modules
             }
             else
                 name = Context.Client.CurrentUser.Username;
-            eb.Author = new EmbedAuthorBuilder().WithName(name).WithIconUrl(Context.Client.CurrentUser.AvatarUrl);
-            eb.ThumbnailUrl = Context.Client.CurrentUser.AvatarUrl;
+            eb.Author = new EmbedAuthorBuilder().WithName(name).WithIconUrl(Context.Client.CurrentUser.GetAvatarUrl());
+            eb.ThumbnailUrl = Context.Client.CurrentUser.GetAvatarUrl();
             eb.AddField(x =>
             {
                 x.IsInline = false;
