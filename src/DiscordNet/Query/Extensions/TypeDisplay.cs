@@ -25,7 +25,7 @@ namespace DiscordNet.Query
                 Console.WriteLine(e.ToString());
                 result = new DocsHttpResult($"https://discord.foxbot.me/docs/api/{pageUrl}.html");
             }
-            eab.Name = $"{(first.TypeInfo.IsInterface ? "Interface" : "Type")}: {first.TypeInfo.Namespace}.{first.DisplayName}";
+            eab.Name = $"{(first.TypeInfo.IsInterface ? "Interface" : (first.TypeInfo.IsEnum ? "Enum" : "Type"))}: {first.TypeInfo.Namespace}.{first.DisplayName}";
             eab.Url = result.Url;//$"https://discord.foxbot.me/docs/api/{first.Namespace}.{first.Name}.html";
             eb.AddField((x) =>
             {
@@ -96,6 +96,32 @@ namespace DiscordNet.Query
                     x.IsInline = true;
                     x.Name = $"Some properties ({max}/{cb.Properties.Count}):";
                     x.Value = String.Join("\n", properties.Values.Select(y => $"``{i++}-``{(IsInherited(new PropertyInfoWrapper(first, y)) ? " (i)" : "")} {y.Name}"));
+                });
+            }
+            if (first.TypeInfo.IsEnum)
+            {
+                var enumValues = first.TypeInfo.GetEnumNames();
+                int now = 0, max = (3 < enumValues.Length ? 3 : enumValues.Length);
+                Random r = new Random();
+                List<int> fields = new List<int>();
+                while (now != max)
+                {
+                    int n = r.Next(enumValues.Length);
+                    while (fields.Contains(n))
+                    {
+                        n++;
+                        if (n == enumValues.Length)
+                            n = 0;
+                    }
+                    fields.Add(n);
+                    now++;
+                }
+                int i = 1;
+                eb.AddField((x) =>
+                {
+                    x.IsInline = true;
+                    x.Name = $"Some fields ({max}/{enumValues.Length}):";
+                    x.Value = String.Join("\n", fields.Select(y => $"``{i}-`` {enumValues[fields[(i++)-1]]}"));
                 });
             }
             return eb;

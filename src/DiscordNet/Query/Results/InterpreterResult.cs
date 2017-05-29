@@ -2,14 +2,16 @@
 {
     public class InterpreterResult
     {
-        public string Text { get; private set; }
-        public string Namespace { get; private set; }
-        public bool SearchTypes { get; private set; }
-        public bool SearchMethods { get; private set; }
-        public bool SearchProperties { get; private set; }
-        public bool SearchEvents { get; private set; }
-        public bool TakeFirst { get; private set; }
-        public SearchType Search { get; private set; }
+        public string Text { get; internal set; }
+        public string Namespace { get; internal set; }
+        public bool SearchTypes { get; internal set; }
+        public bool SearchMethods { get; internal set; }
+        public bool SearchProperties { get; internal set; }
+        public bool SearchEvents { get; internal set; }
+        public bool TakeFirst { get; internal set; }
+        public SearchType Search { get; internal set; }
+        public bool IsSuccess { get; internal set; }
+        public string Error { get; internal set; }
         public InterpreterResult(string text, string nspace = null, bool takeFirst = false, SearchType search = SearchType.NONE, bool searchTypes = true, bool searchMethods = true, bool searchProperties = true, bool searchEvents = true)
         {
             Text = text;
@@ -20,6 +22,14 @@
             SearchEvents = searchEvents;
             TakeFirst = takeFirst;
             Search = search;
+            Error = null;
+            IsSuccess = true;
+        }
+
+        public InterpreterResult(string error)
+        {
+            Error = error;
+            IsSuccess = false;
         }
     }
 }

@@ -174,8 +174,10 @@ namespace DiscordNet.Query
                             extensions[tiw].Add(mi);
                     }
                 }
+                var rt = type.GetRuntimeProperties();
                 foreach (PropertyInfo pi in type.GetRuntimeProperties())
-                    cb.Properties.Add(pi);
+                    if (!pi.GetMethod.IsPrivate &&!cb.Properties.Any(x => x.Name == pi.Name))
+                        cb.Properties.Add(pi);
                 foreach (EventInfo ei in type.GetRuntimeEvents())
                     cb.Events.Add(ei);
                 if(type.GetTypeInfo().IsInterface)
@@ -193,7 +195,7 @@ namespace DiscordNet.Query
                     if (!allTypes[parent].Methods.Contains(mi))
                         allTypes[parent].Methods.Add(mi);
             foreach (PropertyInfo pi in _interface.GetRuntimeProperties())
-                if (!allTypes[parent].Properties.Contains(pi))
+                if (!allTypes[parent].Properties.Contains(pi) && !allTypes[parent].Properties.Any(x => x.Name == pi.Name))
                     allTypes[parent].Properties.Add(pi);
             foreach (EventInfo ei in _interface.GetRuntimeEvents())
                 if (!allTypes[parent].Events.Contains(ei))

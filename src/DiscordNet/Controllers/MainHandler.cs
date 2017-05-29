@@ -1,6 +1,6 @@
-﻿using Discord.Commands;
-using Discord.WebSocket;
+﻿using Discord.WebSocket;
 using DiscordNet.Handlers;
+using System;
 using System.Threading.Tasks;
 
 namespace DiscordNet.Controllers
@@ -12,7 +12,7 @@ namespace DiscordNet.Controllers
         public CommandHandler CommandHandler { get; private set; }
         public QueryHandler QueryHandler { get; private set; }
 
-        public readonly string Prefix = "dnet ";
+        public readonly string Prefix = "<@274366085011079169> ";
 
         public MainHandler(DiscordSocketClient Discord)
         {
@@ -21,7 +21,7 @@ namespace DiscordNet.Controllers
             QueryHandler = new QueryHandler();
         }
 
-        public async Task InitializeEarlyAsync(IDependencyMap map)
+        public async Task InitializeEarlyAsync(IServiceProvider map)
         {
             await CommandHandler.InitializeAsync(this, map);
             QueryHandler.Initialize();

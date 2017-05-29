@@ -44,30 +44,14 @@ namespace DiscordNet.Query
             List<object> list = new List<object>();
             foreach (object o in oldList)
             {
-                if (o is TypeInfoWrapper)
-                {
-                    TypeInfoWrapper r = (TypeInfoWrapper)o;
-                    if (!r.TypeInfo.Namespace.StartsWith("Discord.API") && CompareNamespaces(r.TypeInfo.Namespace))
-                        list.Add(o);
-                }
-                else if (o is MethodInfoWrapper)
-                {
-                    MethodInfoWrapper r = (MethodInfoWrapper)o;
-                    if (!r.Parent.TypeInfo.Namespace.StartsWith("Discord.API") && CompareNamespaces(r.Parent.TypeInfo))
-                        list.Add(o);
-                }
-                else if (o is PropertyInfoWrapper)
-                {
-                    PropertyInfoWrapper r = (PropertyInfoWrapper)o;
-                    if (!r.Parent.TypeInfo.Namespace.StartsWith("Discord.API") && CompareNamespaces(r.Parent.TypeInfo))
-                        list.Add(o);
-                }
-                else if (o is EventInfoWrapper)
-                {
-                    EventInfoWrapper r = (EventInfoWrapper)o;
-                    if (!r.Parent.TypeInfo.Namespace.StartsWith("Discord.API") && CompareNamespaces(r.Parent.TypeInfo))
-                        list.Add(o);
-                }
+                if (o is TypeInfoWrapper type && !type.TypeInfo.Namespace.StartsWith("Discord.API") && CompareNamespaces(type.TypeInfo.Namespace))
+                    list.Add(o);
+                else if (o is MethodInfoWrapper method && !method.Parent.TypeInfo.Namespace.StartsWith("Discord.API") && CompareNamespaces(method.Parent.TypeInfo))
+                    list.Add(o);
+                else if (o is PropertyInfoWrapper property && !property.Parent.TypeInfo.Namespace.StartsWith("Discord.API") && CompareNamespaces(property.Parent.TypeInfo))
+                    list.Add(o);
+                else if (o is EventInfoWrapper eve && !eve.Parent.TypeInfo.Namespace.StartsWith("Discord.API") && CompareNamespaces(eve.Parent.TypeInfo))
+                    list.Add(o);
             }
             return list;
         }
@@ -79,7 +63,8 @@ namespace DiscordNet.Query
                 return true;
             if (_result.Search == SearchType.ALL || _result.Search == SearchType.JUST_NAMESPACE)
                 return toCompare.IndexOf(_result.Namespace, StringComparison.OrdinalIgnoreCase) != -1;
-            Regex rgx = new Regex($"(\\.{_result.Namespace}\\b|\\b{_result.Namespace}\\.|\\b{_result.Namespace}\\b)", RegexOptions.IgnoreCase);
+            //Regex rgx = new Regex($"(\\.{_result.Namespace}\\b|\\b{_result.Namespace}\\.|\\b{_result.Namespace}\\b)", RegexOptions.IgnoreCase);
+            Regex rgx = new Regex($"(\\.{_result.Namespace}\\b|^{_result.Namespace}$)", RegexOptions.IgnoreCase);
             return rgx.IsMatch(toCompare);
         }
     }

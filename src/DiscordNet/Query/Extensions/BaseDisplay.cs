@@ -15,10 +15,11 @@ namespace DiscordNet.Query
     {
         private async Task<DocsHttpResult> GetWebDocsAsync(string url, object o)
         {
-            string summary, example = null;
+            string summary = null, example = null;
             string search = GetDocsUrlPath(o);
-            string html = await GetWebDocsHtmlAsync(url, o);
-            if (!string.IsNullOrEmpty(html))
+            var result = await GetWebDocsHtmlAsync(url, o);
+            string html = result.Item2;
+            if (result.Item1 && !string.IsNullOrEmpty(html))
             {
                 string block = ((o is TypeInfoWrapper) ? html.Substring(html.IndexOf($"<h1 id=\"{search}")) : html.Substring(html.IndexOf($"<h4 id=\"{search}")));
                 string anchor = block.Substring(block.IndexOf('"') + 1);
@@ -31,12 +32,10 @@ namespace DiscordNet.Query
                 if (!(o is TypeInfoWrapper) && !IsInherited(o))
                     url += $"#{anchor}";
             }
-            else
-                summary = null;
             return new DocsHttpResult(url, summary, example);
         }
 
-        private async Task<string> GetWebDocsHtmlAsync(string url, object o)
+        private async Task<(bool, string)> GetWebDocsHtmlAsync(string url, object o)
         {
             string html;
             if (IsInherited(o))
@@ -45,7 +44,7 @@ namespace DiscordNet.Query
                 {
                     MethodInfoWrapper mi = (MethodInfoWrapper)o;
                     if (!mi.Method.DeclaringType.Namespace.StartsWith("Discord"))
-                        return "";
+                        return (true, "");
                     else
                         url = $"https://discord.foxbot.me/docs/api/{SanitizeDocsUrl($"{mi.Method.DeclaringType.Namespace}.{mi.Method.DeclaringType.Name}")}.html";
                 }
@@ -53,7 +52,7 @@ namespace DiscordNet.Query
                 {
                     PropertyInfoWrapper pi = (PropertyInfoWrapper)o;
                     if (!pi.Property.DeclaringType.Namespace.StartsWith("Discord"))
-                        return "";
+                        return (true, "");
                     else
                         url = $"https://discord.foxbot.me/docs/api/{SanitizeDocsUrl($"{pi.Property.DeclaringType.Namespace}.{pi.Property.DeclaringType.Name}")}.html";
                 }
@@ -62,10 +61,16 @@ namespace DiscordNet.Query
             {
                 var res = await httpClient.GetAsync(url);
                 if (!res.IsSuccessStatusCode)
-                    throw new Exception("Not possible to connect to the docs page");
+                {
+                    if (res.StatusCode != HttpStatusCode.NotFound)
+                        //throw new Exception("Not possible to connect to the docs page");
+                        return (false, "Not possible to connect to the docs page");
+                    else
+                        return (false, "Docs page not found");
+                }
                 html = await res.Content.ReadAsStringAsync();
             }
-            return html;
+            return (true, html);
         }
 
         private string GetDocsUrlPath(object o)
@@ -129,7 +134,12 @@ namespace DiscordNet.Query
             if (o is TypeInfoWrapper)
             {
                 TypeInfoWrapper r = (TypeInfoWrapper)o;
-                return $"Type: {r.DisplayName} in {r.TypeInfo.Namespace}";
+                string type = "Type";
+                if (r.TypeInfo.IsInterface)
+                    type = "Interface";
+                else if (r.TypeInfo.IsEnum)
+                    type = "Enum";
+                return $"{type}: {r.DisplayName} in {r.TypeInfo.Namespace}";
             }
             if (o is MethodInfoWrapper)
             {

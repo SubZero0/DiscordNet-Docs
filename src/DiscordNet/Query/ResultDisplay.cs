@@ -3,7 +3,6 @@ using DiscordNet.Query.Results;
 using DiscordNet.Query.Wrappers;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 
 namespace DiscordNet.Query
@@ -24,10 +23,10 @@ namespace DiscordNet.Query
             if (list.Count() == 1)
                 return await ShowAsync(list.ElementAt(0));
             else
-                return ShowMultiple(list.Select(x => x.First()));
+                return await ShowMultipleAsync(list.Select(x => x.First()));
         }
 
-        private async Task<EmbedBuilder> ShowAsync(IEnumerable<object> o)
+        private async Task<EmbedBuilder> ShowAsync(params object[] o)
         {
             var first = o.First();
             EmbedAuthorBuilder eab = new EmbedAuthorBuilder();
@@ -44,20 +43,36 @@ namespace DiscordNet.Query
             return eb;
         }
 
-        private EmbedBuilder ShowMultiple(IEnumerable<object> obj)
+        private async Task<EmbedBuilder> ShowMultipleAsync(IEnumerable<object> obj)
         {
             EmbedBuilder eb = new EmbedBuilder();
-            if (obj.Count() > 10)
+            var same = obj.GroupBy(x => string.Join("", GetPath(x).Split(' ').Take(2)));
+            if (same.Count() == 1)
             {
-                eb.Title = "Too many results, try filtering your search. Some results:";
-                eb.Description = string.Join("\n", GetPaths(obj.Take(10)));
+                eb = await ShowAsync(obj.First());
+                eb.Author.Name = $"(Most likely) {eb.Author.Name}";
+                var list = obj.Skip(1).Take(3);
+                eb.AddField(x =>
+                {
+                    x.Name = $"Other results found ({list.Count()}/{obj.Count()-1}):";
+                    x.Value = string.Join("\n", GetPaths(list));
+                    x.IsInline = false;
+                });
             }
             else
             {
-                eb.Title = "Did you mean:";
-                eb.Description = string.Join("\n", GetPaths(obj));
-                eb.Footer = new EmbedFooterBuilder().WithText("Type help to see keywords to filter your query.");
+                if (obj.Count() > 10)
+                {
+                    eb.Title = $"Too many results, try filtering your search. Some results (10/{obj.Count()}):";
+                    eb.Description = string.Join("\n", GetPaths(obj.Take(10)));
+                }
+                else
+                {
+                    eb.Title = "Did you mean:";
+                    eb.Description = string.Join("\n", GetPaths(obj));
+                }
             }
+            eb.Footer = new EmbedFooterBuilder().WithText("Type help to see keywords to filter your query.");
             return eb;
         }
     }

@@ -71,7 +71,8 @@ namespace DiscordNet.Modules
                 }
                 else if (line.StartsWith("href:"))
                 {
-                    guides.Last().Value[lastname] = line.Split(new string[] { "href:" }, StringSplitOptions.None)[1].Trim();
+                    string link = line.Split(new string[] { "href:" }, StringSplitOptions.None)[1].Trim();
+                    guides.Last().Value[lastname] = $"{link.Substring(0, link.Length - 2)}html";
                 }
             }
             StringBuilder sb = new StringBuilder();
@@ -123,13 +124,6 @@ namespace DiscordNet.Modules
             }
         }
 
-        [Command("source")]
-        [Summary("Source code location")]
-        public async Task Source()
-        {
-            await ReplyAsync("Source: https://github.com/SubZero0/DiscordNet-Docs");
-        }
-
         [Command("info")]
         [Summary("Show some information")]
         public async Task Info()
@@ -151,7 +145,8 @@ namespace DiscordNet.Modules
                 x.IsInline = false;
                 x.Name = "Info";
                 x.Value = $"- Library: Discord.Net ({DiscordConfig.Version})\n" +
-                          $"- Runtime: {RuntimeInformation.FrameworkDescription} {RuntimeInformation.OSArchitecture}\n" +
+                          $"- Runtime: {RuntimeInformation.FrameworkDescription} {RuntimeInformation.ProcessArchitecture}\n" +
+                          $"- Source: https://github.com/SubZero0/DiscordNet-Docs\n" +
                           $"- Uptime: {(DateTime.Now - Process.GetCurrentProcess().StartTime).ToString(@"dd\.hh\:mm\:ss")}";
             });
             eb.AddField(x =>
