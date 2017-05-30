@@ -21,7 +21,7 @@ namespace DiscordNet.Query
         {
             var list = _result.List.GroupBy(x => GetPath(x, false));
             if (list.Count() == 1)
-                return await ShowAsync(list.ElementAt(0));
+                return await ShowAsync(list.First().ElementAt(0));
             else
                 return await ShowMultipleAsync(list.Select(x => x.First()));
         }
@@ -51,7 +51,7 @@ namespace DiscordNet.Query
             {
                 eb = await ShowAsync(obj.First());
                 eb.Author.Name = $"(Most likely) {eb.Author.Name}";
-                var list = obj.Skip(1).Take(3);
+                var list = obj.Skip(1).Take(5);
                 eb.AddField(x =>
                 {
                     x.Name = $"Other results found ({list.Count()}/{obj.Count()-1}):";

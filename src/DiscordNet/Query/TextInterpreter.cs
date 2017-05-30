@@ -71,7 +71,7 @@ namespace DiscordNet.Query
             }
             _text = _text.Trim();
             if (_text == "")
-                new InterpreterResult("No text to search.");
+                return new InterpreterResult("No text to search.");
             if (nspace != null)
                 nspace = nspace.Trim();
             return new InterpreterResult(_text, nspace, takeFirst, search, searchTypes, searchMethods, searchProperties, searchEvents);

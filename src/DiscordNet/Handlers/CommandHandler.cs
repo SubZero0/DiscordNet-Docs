@@ -157,12 +157,12 @@ namespace DiscordNet.Handlers
                     {
                         int lastIndex;
                         var find = sr.Commands.Where(x => x.Command.Aliases.First().Equals(command, StringComparison.OrdinalIgnoreCase));
-                        if (find.Count() != 0)
+                        if (find.Any())
                             cmd = find.First();
                         while (cmd == null && (lastIndex = command.LastIndexOf(' ')) != -1) //TODO: Maybe remove and say command not found?
                         {
                             find = sr.Commands.Where(x => x.Command.Aliases.First().Equals(command.Substring(0, lastIndex), StringComparison.OrdinalIgnoreCase));
-                            if (find.Count() != 0)
+                            if (find.Any())
                                 cmd = find.First();
                             command = command.Substring(0, lastIndex);
                         }
