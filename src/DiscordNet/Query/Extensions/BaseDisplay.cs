@@ -40,9 +40,8 @@ namespace DiscordNet.Query
             string html;
             if (IsInherited(o))
             {
-                if (o is MethodInfoWrapper)
+                if (o is MethodInfoWrapper mi)
                 {
-                    MethodInfoWrapper mi = (MethodInfoWrapper)o;
                     if (!mi.Method.DeclaringType.Namespace.StartsWith("Discord"))
                         return (true, "");
                     else
@@ -77,26 +76,14 @@ namespace DiscordNet.Query
         {
             bool useParent = !IsInherited(o);
             Regex rgx = new Regex("\\W+");
-            if (o is TypeInfoWrapper)
-            {
-                TypeInfoWrapper r = (TypeInfoWrapper)o;
-                return rgx.Replace($"{r.TypeInfo.Namespace}_{r.TypeInfo.Name}", "_");
-            }
-            if (o is MethodInfoWrapper)
-            {
-                MethodInfoWrapper r = (MethodInfoWrapper)o;
-                return rgx.Replace($"{(useParent ? r.Parent.TypeInfo.Namespace : r.Method.DeclaringType.Namespace)}_{(useParent ? r.Parent.TypeInfo.Name : r.Method.DeclaringType.Name)}_{r.Method.Name}_", "_");
-            }
-            if (o is PropertyInfoWrapper)
-            {
-                PropertyInfoWrapper r = (PropertyInfoWrapper)o;
-                return rgx.Replace($"{(useParent ? r.Parent.TypeInfo.Namespace : r.Property.DeclaringType.Namespace)}_{(useParent ? r.Parent.TypeInfo.Name : r.Property.DeclaringType.Name)}_{r.Property.Name}", "_");
-            }
-            if (o is EventInfoWrapper)
-            {
-                EventInfoWrapper r = (EventInfoWrapper)o;
-                return rgx.Replace($"{r.Parent.TypeInfo.Namespace}_{r.Parent.TypeInfo.Name}_{r.Event.Name}".Replace('.', '_'), "_");
-            }
+            if (o is TypeInfoWrapper type)
+                return rgx.Replace($"{type.TypeInfo.Namespace}_{type.TypeInfo.Name}", "_");
+            if (o is MethodInfoWrapper method)
+                return rgx.Replace($"{(useParent ? method.Parent.TypeInfo.Namespace : method.Method.DeclaringType.Namespace)}_{(useParent ? method.Parent.TypeInfo.Name : method.Method.DeclaringType.Name)}_{method.Method.Name}_", "_");
+            if (o is PropertyInfoWrapper property)
+                return rgx.Replace($"{(useParent ? property.Parent.TypeInfo.Namespace : property.Property.DeclaringType.Namespace)}_{(useParent ? property.Parent.TypeInfo.Name : property.Property.DeclaringType.Name)}_{property.Property.Name}", "_");
+            if (o is EventInfoWrapper eve)
+                return rgx.Replace($"{eve.Parent.TypeInfo.Namespace}_{eve.Parent.TypeInfo.Name}_{eve.Event.Name}".Replace('.', '_'), "_");
             return rgx.Replace($"{o.GetType().Namespace}_{o.GetType().Name}".Replace('.', '_'), "_");
         }
 
@@ -108,55 +95,54 @@ namespace DiscordNet.Query
 
         public static bool IsInherited(object o)
         {
-            if (o is PropertyInfoWrapper)
-            {
-                var pi = (PropertyInfoWrapper)o;
-                return $"{pi.Parent.TypeInfo.Namespace}.{pi.Parent.TypeInfo.Name}" != $"{pi.Property.DeclaringType.Namespace}.{pi.Property.DeclaringType.Name}";
-            }
-            if (o is MethodInfoWrapper)
-            {
-                var mi = (MethodInfoWrapper)o;
-                return $"{mi.Parent.TypeInfo.Namespace}.{mi.Parent.TypeInfo.Name}" != $"{mi.Method.DeclaringType.Namespace}.{mi.Method.DeclaringType.Name}";
-            }
+            if (o is PropertyInfoWrapper property)
+                return $"{property.Parent.TypeInfo.Namespace}.{property.Parent.TypeInfo.Name}" != $"{property.Property.DeclaringType.Namespace}.{property.Property.DeclaringType.Name}";
+            if (o is MethodInfoWrapper method)
+                return $"{method.Parent.TypeInfo.Namespace}.{method.Parent.TypeInfo.Name}" != $"{method.Method.DeclaringType.Namespace}.{method.Method.DeclaringType.Name}";
             return false;
         }
 
         private List<string> GetPaths(IEnumerable<object> list)
         {
-            List<string> newlist = new List<string>();
-            foreach (object o in list)
-                newlist.Add(GetPath(o));
-            return newlist;
+            return list.Select(x => GetPath(x)).ToList();
         }
 
         public static string GetPath(object o, bool withInheritanceMarkup = true)
         {
-            if (o is TypeInfoWrapper)
+            if (o is TypeInfoWrapper typeWrapper)
             {
-                TypeInfoWrapper r = (TypeInfoWrapper)o;
                 string type = "Type";
-                if (r.TypeInfo.IsInterface)
+                if (typeWrapper.TypeInfo.IsInterface)
                     type = "Interface";
-                else if (r.TypeInfo.IsEnum)
+                else if (typeWrapper.TypeInfo.IsEnum)
                     type = "Enum";
-                return $"{type}: {r.DisplayName} in {r.TypeInfo.Namespace}";
+                return $"{type}: {typeWrapper.DisplayName} in {typeWrapper.TypeInfo.Namespace}";
             }
-            if (o is MethodInfoWrapper)
-            {
-                MethodInfoWrapper r = (MethodInfoWrapper)o;
-                return $"Method: {r.Method.Name} in {r.Parent.TypeInfo.Namespace}.{r.Parent.DisplayName}{(IsInherited(r) && withInheritanceMarkup ? " (i)" : "")}";
-            }
-            if (o is PropertyInfoWrapper)
-            {
-                PropertyInfoWrapper r = (PropertyInfoWrapper)o;
-                return $"Property: {r.Property.Name} in {r.Parent.TypeInfo.Namespace}.{r.Parent.DisplayName}{(IsInherited(r) && withInheritanceMarkup ? " (i)" : "")}";
-            }
-            if (o is EventInfoWrapper)
-            {
-                EventInfoWrapper r = (EventInfoWrapper)o;
-                return $"Event: {r.Event.Name} in {r.Parent.TypeInfo.Namespace}.{r.Parent.DisplayName}";
-            }
+            if (o is MethodInfoWrapper method)
+                return $"Method: {method.Method.Name} in {method.Parent.TypeInfo.Namespace}.{method.Parent.DisplayName}{(IsInherited(method) && withInheritanceMarkup ? " (i)" : "")}";
+            if (o is PropertyInfoWrapper property)
+                return $"Property: {property.Property.Name} in {property.Parent.TypeInfo.Namespace}.{property.Parent.DisplayName}{(IsInherited(property) && withInheritanceMarkup ? " (i)" : "")}";
+            if (o is EventInfoWrapper eve)
+                return $"Event: {eve.Event.Name} in {eve.Parent.TypeInfo.Namespace}.{eve.Parent.DisplayName}";
             return o.GetType().ToString();
+        }
+
+        private List<string> GetNamespaces(IEnumerable<object> list)
+        {
+            return list.Select(x => GetNamespace(x)).ToList();
+        }
+
+        public static string GetNamespace(object o, bool withInheritanceMarkup = true)
+        {
+            if (o is TypeInfoWrapper typeWrapper)
+                return typeWrapper.TypeInfo.Namespace;
+            if (o is MethodInfoWrapper method)
+                return $"{method.Parent.TypeInfo.Namespace}.{method.Parent.DisplayName}";
+            if (o is PropertyInfoWrapper property)
+                return $"{property.Parent.TypeInfo.Namespace}.{property.Parent.DisplayName}";
+            if (o is EventInfoWrapper eve)
+                return $"{eve.Parent.TypeInfo.Namespace}.{eve.Parent.DisplayName}";
+            return o.GetType().Namespace;
         }
 
         private string BuildType(Type type)

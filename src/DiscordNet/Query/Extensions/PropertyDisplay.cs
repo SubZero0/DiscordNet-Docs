@@ -35,20 +35,20 @@ namespace DiscordNet.Query
             if (result.Summary != null)
                 eb.AddField((x) =>
                 {
-                    x.IsInline = true;
+                    x.IsInline = false;
                     x.Name = "Summary:";
                     x.Value = result.Summary;
                 });
             if (result.Example != null)
                 eb.AddField((x) =>
                 {
-                    x.IsInline = true;
+                    x.IsInline = false;
                     x.Name = "Example:";
                     x.Value = result.Example;
                 });
             eb.AddField((x) =>
             {
-                x.IsInline = true;
+                x.IsInline = false;
                 x.Name = "Return type:";
                 x.Value = BuildType(first.Property.PropertyType);
             });

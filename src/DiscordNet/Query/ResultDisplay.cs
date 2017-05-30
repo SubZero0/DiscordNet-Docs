@@ -21,12 +21,12 @@ namespace DiscordNet.Query
         {
             var list = _result.List.GroupBy(x => GetPath(x, false));
             if (list.Count() == 1)
-                return await ShowAsync(list.First().ElementAt(0));
+                return await ShowAsync(list.First());
             else
-                return await ShowMultipleAsync(list.Select(x => x.First()));
+                return await ShowMultipleAsync(list);
         }
 
-        private async Task<EmbedBuilder> ShowAsync(params object[] o)
+        private async Task<EmbedBuilder> ShowAsync(IEnumerable<object> o)
         {
             var first = o.First();
             EmbedAuthorBuilder eab = new EmbedAuthorBuilder();
@@ -43,33 +43,35 @@ namespace DiscordNet.Query
             return eb;
         }
 
-        private async Task<EmbedBuilder> ShowMultipleAsync(IEnumerable<object> obj)
+        private async Task<EmbedBuilder> ShowMultipleAsync(IEnumerable<IEnumerable<object>> obj)
         {
             EmbedBuilder eb = new EmbedBuilder();
-            var same = obj.GroupBy(x => string.Join("", GetPath(x).Split(' ').Take(2)));
+            var singleList = obj.Select(x => x.First());
+            var same = singleList.GroupBy(x => string.Join("", GetPath(x).Split(' ').Take(2)));
             if (same.Count() == 1)
             {
                 eb = await ShowAsync(obj.First());
                 eb.Author.Name = $"(Most likely) {eb.Author.Name}";
-                var list = obj.Skip(1).Take(5);
-                eb.AddField(x =>
-                {
-                    x.Name = $"Other results found ({list.Count()}/{obj.Count()-1}):";
-                    x.Value = string.Join("\n", GetPaths(list));
-                    x.IsInline = false;
-                });
+                var list = singleList.Skip(1).RandomShuffle().Take(6);
+                for (int i = 0; i < list.Count() / 3; i++)
+                    eb.AddField(x =>
+                    {
+                        x.Name = (i == 0 ? $"Also found in ({list.Count()}/{singleList.Count() - 1}):" : "​");
+                        x.Value = string.Join("\n", GetNamespaces(list.Skip(3*i).Take(3)));
+                        x.IsInline = true;
+                    });
             }
             else
             {
-                if (obj.Count() > 10)
+                if (singleList.Count() > 10)
                 {
                     eb.Title = $"Too many results, try filtering your search. Some results (10/{obj.Count()}):";
-                    eb.Description = string.Join("\n", GetPaths(obj.Take(10)));
+                    eb.Description = string.Join("\n", GetPaths(singleList.Take(10)));
                 }
                 else
                 {
                     eb.Title = "Did you mean:";
-                    eb.Description = string.Join("\n", GetPaths(obj));
+                    eb.Description = string.Join("\n", GetPaths(singleList));
                 }
             }
             eb.Footer = new EmbedFooterBuilder().WithText("Type help to see keywords to filter your query.");

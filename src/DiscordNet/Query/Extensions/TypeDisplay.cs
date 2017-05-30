@@ -50,78 +50,36 @@ namespace DiscordNet.Query
             CacheBag cb = _cache.GetCacheBag(first);
             if (cb.Methods.Count != 0)
             {
-                int now = 0, max = (3 < cb.Methods.Count ? 3 : cb.Methods.Count);
-                Random r = new Random();
-                Dictionary<int, MethodInfo> methods = new Dictionary<int, MethodInfo>();
-                while (now != max)
-                {
-                    int n = r.Next(cb.Methods.Count);
-                    while (methods.ContainsKey(n))
-                    {
-                        n++;
-                        if (n == cb.Methods.Count)
-                            n = 0;
-                    }
-                    methods[n] = cb.Methods.ElementAt(n);
-                    now++;
-                }
                 int i = 1;
+                var methods = cb.Methods.RandomShuffle().Take(3);
                 eb.AddField((x) =>
                 {
                     x.IsInline = true;
-                    x.Name = $"Some methods ({max}/{cb.Methods.Count}):";
-                    x.Value = String.Join("\n", methods.Values.Select(y => $"``{i++}-``{(IsInherited(new MethodInfoWrapper(first, y)) ? " (i)" : "")} {y.Name}(...)"));
+                    x.Name = $"Some methods ({methods.Count()}/{cb.Methods.Count}):";
+                    x.Value = String.Join("\n", methods.Select(y => $"``{i++}-``{(IsInherited(new MethodInfoWrapper(first, y)) ? " (i)" : "")} {y.Name}(...)"));
                 });
             }
             if (cb.Properties.Count != 0)
             {
-                int now = 0, max = (3 < cb.Properties.Count ? 3 : cb.Properties.Count);
-                Random r = new Random();
-                Dictionary<int, PropertyInfo> properties = new Dictionary<int, PropertyInfo>();
-                while (now != max)
-                {
-                    int n = r.Next(cb.Properties.Count);
-                    while (properties.ContainsKey(n))
-                    {
-                        n++;
-                        if (n == cb.Properties.Count)
-                            n = 0;
-                    }
-                    properties[n] = cb.Properties.ElementAt(n);
-                    now++;
-                }
                 int i = 1;
+                var properties = cb.Properties.RandomShuffle().Take(3);
                 eb.AddField((x) =>
                 {
                     x.IsInline = true;
-                    x.Name = $"Some properties ({max}/{cb.Properties.Count}):";
-                    x.Value = String.Join("\n", properties.Values.Select(y => $"``{i++}-``{(IsInherited(new PropertyInfoWrapper(first, y)) ? " (i)" : "")} {y.Name}"));
+                    x.Name = $"Some properties ({properties.Count()}/{cb.Properties.Count}):";
+                    x.Value = String.Join("\n", properties.Select(y => $"``{i++}-``{(IsInherited(new PropertyInfoWrapper(first, y)) ? " (i)" : "")} {y.Name}"));
                 });
             }
             if (first.TypeInfo.IsEnum)
             {
                 var enumValues = first.TypeInfo.GetEnumNames();
-                int now = 0, max = (3 < enumValues.Length ? 3 : enumValues.Length);
-                Random r = new Random();
-                List<int> fields = new List<int>();
-                while (now != max)
-                {
-                    int n = r.Next(enumValues.Length);
-                    while (fields.Contains(n))
-                    {
-                        n++;
-                        if (n == enumValues.Length)
-                            n = 0;
-                    }
-                    fields.Add(n);
-                    now++;
-                }
                 int i = 1;
+                var fields = enumValues.RandomShuffle().Take(3);
                 eb.AddField((x) =>
                 {
                     x.IsInline = true;
-                    x.Name = $"Some fields ({max}/{enumValues.Length}):";
-                    x.Value = String.Join("\n", fields.Select(y => $"``{i}-`` {enumValues[fields[(i++)-1]]}"));
+                    x.Name = $"Some fields ({fields.Count()}/{enumValues.Length}):";
+                    x.Value = String.Join("\n", fields.Select(y => $"``{i}-`` {y}"));
                 });
             }
             return eb;
