@@ -127,6 +127,26 @@ namespace DiscordNet.Query
             return o.GetType().ToString();
         }
 
+        public static string GetSimplePath(object o)
+        {
+            if (o is TypeInfoWrapper typeWrapper)
+            {
+                string type = "Type";
+                if (typeWrapper.TypeInfo.IsInterface)
+                    type = "Interface";
+                else if (typeWrapper.TypeInfo.IsEnum)
+                    type = "Enum";
+                return $"{type}:{typeWrapper.DisplayName}";
+            }
+            if (o is MethodInfoWrapper method)
+                return $"Method:{method.Method.Name}";
+            if (o is PropertyInfoWrapper property)
+                return $"Property:{property.Property.Name}";
+            if (o is EventInfoWrapper eve)
+                return $"Event:{eve.Event.Name}";
+            return o.GetType().ToString();
+        }
+
         private List<string> GetNamespaces(IEnumerable<object> list)
         {
             return list.Select(x => GetNamespace(x)).ToList();

@@ -1,6 +1,7 @@
 ﻿using Discord;
 using DiscordNet.Query.Results;
 using DiscordNet.Query.Wrappers;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -47,13 +48,14 @@ namespace DiscordNet.Query
         {
             EmbedBuilder eb = new EmbedBuilder();
             var singleList = obj.Select(x => x.First());
-            var same = singleList.GroupBy(x => string.Join("", GetPath(x).Split(' ').Take(2)));
+            var same = singleList.GroupBy(x => GetSimplePath(x));
             if (same.Count() == 1)
             {
                 eb = await ShowAsync(obj.First());
                 eb.Author.Name = $"(Most likely) {eb.Author.Name}";
                 var list = singleList.Skip(1).RandomShuffle().Take(6);
-                for (int i = 0; i < list.Count() / 3; i++)
+                int max = (int)Math.Ceiling(list.Count() / 3.0);
+                for (int i = 0; i < max; i++)
                     eb.AddField(x =>
                     {
                         x.Name = (i == 0 ? $"Also found in ({list.Count()}/{singleList.Count() - 1}):" : "​");
