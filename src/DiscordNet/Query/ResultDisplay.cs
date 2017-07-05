@@ -1,4 +1,6 @@
 ﻿using Discord;
+using Discord.Addons.Paginator;
+using DiscordNet.EmbedExtension;
 using DiscordNet.Query.Results;
 using DiscordNet.Query.Wrappers;
 using System;
@@ -12,15 +14,19 @@ namespace DiscordNet.Query
     {
         private SearchResult<object> _result;
         private Cache _cache;
-        public ResultDisplay(SearchResult<object> result, Cache cache)
+        private bool _isList;
+        public ResultDisplay(SearchResult<object> result, Cache cache, bool isList)
         {
             _result = result;
             _cache = cache;
+            _isList = isList;
         }
 
         public async Task<EmbedBuilder> RunAsync()
         {
             var list = _result.List.GroupBy(x => GetPath(x, false));
+            if (_isList)
+                return ShowList(list);
             if (list.Count() == 1)
                 return await ShowAsync(list.First());
             else
@@ -59,13 +65,13 @@ namespace DiscordNet.Query
                     eb.AddField(x =>
                     {
                         x.Name = (i == 0 ? $"Also found in ({list.Count()}/{singleList.Count() - 1}):" : "​");
-                        x.Value = string.Join("\n", GetNamespaces(list.Skip(3*i).Take(3)));
+                        x.Value = String.Join("\n", list.Skip(3 * i).Take(3).Select(y => GetParent(y)));
                         x.IsInline = true;
                     });
             }
             else
             {
-                if (singleList.Count() > 10)
+                /*if (singleList.Count() > 10)
                 {
                     eb.Title = $"Too many results, try filtering your search. Some results (10/{obj.Count()}):";
                     eb.Description = string.Join("\n", GetPaths(singleList.Take(10)));
@@ -74,10 +80,35 @@ namespace DiscordNet.Query
                 {
                     eb.Title = "Did you mean:";
                     eb.Description = string.Join("\n", GetPaths(singleList));
-                }
+                }*/
+                eb = await ShowAsync(obj.First());
+                eb.Author.Name = $"(First) {eb.Author.Name}";
+                var list = singleList.Skip(1).RandomShuffle().Take(3);
+                eb.AddField(x =>
+                {
+                    x.Name = $"Other results ({list.Count()}/{singleList.Count() - 1}):";
+                    x.Value = string.Join("\n", GetPaths(list));
+                    x.IsInline = false;
+                });
             }
             eb.Footer = new EmbedFooterBuilder().WithText("Type help to see keywords to filter your query.");
             return eb;
+        }
+
+        private EmbedBuilder ShowList(IEnumerable<IEnumerable<object>> obj)
+        {
+            PaginatorBuilder eb = new PaginatorBuilder();
+            var singleList = obj.Select(x => x.First());
+            int size = 10;
+            int pages = (int)Math.Ceiling(singleList.Count() / (float)size);
+            eb.Pages = ToPages(singleList, pages, size);
+            return eb;
+        }
+
+        private IEnumerable<string> ToPages(IEnumerable<object> list, int pages, int size)
+        {
+            for (int i = 0; i < pages; i++)
+                yield return String.Join("\n", GetPaths(list.Skip(i * size).Take(size)));
         }
     }
 }

@@ -18,7 +18,7 @@ using System.Threading.Tasks;
 
 namespace DiscordNet.Modules
 {
-    [Name("General")]
+    [Name("Commands")]
     public class GeneralCommands : ModuleBase<MyCommandContext>
     {
         [Command("clean")]

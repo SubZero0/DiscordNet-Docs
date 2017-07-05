@@ -1,8 +1,11 @@
 ﻿using Discord;
+using Discord.Addons.Paginator;
 using Discord.Commands;
 using Discord.WebSocket;
 using DiscordNet.Controllers;
+using DiscordNet.EmbedExtension;
 using DiscordNet.Modules.Addons;
+using Microsoft.Extensions.Caching.Memory;
 using System;
 using System.Linq;
 using System.Reflection;
@@ -13,33 +16,76 @@ namespace DiscordNet.Handlers
 {
     public class CommandHandler
     {
-        private CommandService commands;
-        private DiscordSocketClient client;
-        private IServiceProvider services;
-        private MainHandler MainHandler;
+        private CommandService _commands;
+        private DiscordSocketClient _client;
+        private IServiceProvider _services;
+        private MainHandler _mainHandler;
+        private MemoryCache cache = new MemoryCache(new MemoryCacheOptions { ExpirationScanFrequency = TimeSpan.FromMinutes(3) });
 
         public async Task InitializeAsync(MainHandler MainHandler, IServiceProvider services)
         {
-            this.MainHandler = MainHandler;
-            client = (DiscordSocketClient)services.GetService(typeof(DiscordSocketClient));
-            commands = new CommandService();
-            this.services = services;
+            _mainHandler = MainHandler;
+            _client = (DiscordSocketClient)services.GetService(typeof(DiscordSocketClient));
+            _commands = new CommandService();
+            _services = services;
 
-            await commands.AddModulesAsync(Assembly.GetEntryAssembly());
-            commands.Log += Log;
+            await _commands.AddModulesAsync(Assembly.GetEntryAssembly());
+            _commands.Log += Log;
 
-            client.MessageReceived += HandleCommand;
+            _client.MessageReceived += HandleCommand;
+            _client.MessageUpdated += HandleUpdate;
         }
 
         private Task Log(LogMessage msg)
         {
-            Console.WriteLine(msg.Exception.ToString());
+            Console.WriteLine(msg.Exception);
             return Task.CompletedTask;
         }
 
         public Task Close()
         {
-            client.MessageReceived -= HandleCommand;
+            _client.MessageReceived -= HandleCommand;
+            return Task.CompletedTask;
+        }
+
+        private Task HandleUpdate(Cacheable<IMessage, ulong> before, SocketMessage after, ISocketMessageChannel channel)
+        {
+            if (!(after is SocketUserMessage afterSocket))
+                return Task.CompletedTask;
+            _ = Task.Run(async () =>
+            {
+                ulong? id;
+                if ((id = GetOurMessageIdFromCache(before.Id)) != null)
+                {
+                    var botMessage = await channel.GetMessageAsync(id.Value) as IUserMessage;
+                    if (botMessage == null)
+                        return;
+                    int argPos = 0;
+                    if (!afterSocket.HasMentionPrefix(_client.CurrentUser, ref argPos)) return;
+                    var reply = await BuildReply(afterSocket, after.Content.Substring(argPos));
+
+                    if (reply.Item1 == null && reply.Item2 == null && reply.Item3 == null)
+                        return;
+                    var pagination = (PaginationService)_services.GetService(typeof(PaginationService));
+                    var isPaginatedMessage = pagination.IsPaginatedMessage(id.Value);
+                    if (reply.Item3 != null)
+                    {
+                        if (isPaginatedMessage)
+                            await pagination.UpdatePaginatedMessageAsync(botMessage, reply.Item3);
+                        else
+                            await pagination.EditMessageToPaginatedMessageAsync(botMessage, reply.Item3);
+                    }
+                    else
+                    {
+                        if (isPaginatedMessage)
+                        {
+                            pagination.StopTrackingPaginatedMessage(id.Value);
+                            _ = botMessage.RemoveAllReactionsAsync();
+                        }
+                        await (await after.Channel.GetMessageAsync(id.Value) as IUserMessage).ModifyAsync(x => { x.Content = reply.Item1; x.Embed = reply.Item2.Build(); });
+                    }
+                }
+            });
             return Task.CompletedTask;
         }
 
@@ -48,40 +94,72 @@ namespace DiscordNet.Handlers
             var msg = parameterMessage as SocketUserMessage;
             if (msg == null) return Task.CompletedTask;
             if (msg.Author.IsBot) return Task.CompletedTask;
-            if (msg.Channel.Name != "dotnet_discord-net" && msg.Channel.Name != "testing" && msg.Channel.Name != "playground") return Task.CompletedTask;
+            if (!(msg.Channel is IPrivateChannel))
+                if (msg.Channel.Name != "dotnet_discord-net" && msg.Channel.Name != "testing" && msg.Channel.Name != "playground") return Task.CompletedTask;
             int argPos = 0;
-            if (!(msg.HasMentionPrefix(client.CurrentUser, ref argPos) /*|| msg.HasStringPrefix(MainHandler.Prefix, ref argPos)*/)) return Task.CompletedTask;
-            var _ = HandleCommandAsync(msg, argPos);
+            if (!(msg.HasMentionPrefix(_client.CurrentUser, ref argPos) /*|| msg.HasStringPrefix(MainHandler.Prefix, ref argPos)*/)) return Task.CompletedTask;
+            _ = HandleCommandAsync(msg, argPos);
             return Task.CompletedTask;
         }
 
         public async Task HandleCommandAsync(SocketUserMessage msg, int argPos)
         {
-            var context = new MyCommandContext(client, MainHandler, msg);
-            var result = await commands.ExecuteAsync(context, argPos, services);
+            var reply = await BuildReply(msg, msg.Content.Substring(argPos));
+            if (reply.Item1 == null && reply.Item2 == null && reply.Item3 == null)
+                return;
+            IUserMessage message;
+            if (reply.Item3 != null)
+                message = await ((PaginationService)_services.GetService(typeof(PaginationService))).SendPaginatedMessageAsync(msg.Channel, reply.Item3);
+            else
+                message = await msg.Channel.SendMessageAsync(reply.Item1, embed: reply.Item2);
+            AddCache(msg.Id, message.Id);
+        }
+
+        private async Task<(string, EmbedBuilder, PaginatedMessage)> BuildReply(IUserMessage msg, string message)
+        {
+            var context = new MyCommandContext(_client, _mainHandler, msg);
+            var result = await _commands.ExecuteAsync(context, message, _services);
             if (!result.IsSuccess && result.Error != CommandError.UnknownCommand)
-                await msg.Channel.SendMessageAsync(result.ErrorReason);
+                return (result.ErrorReason, null, null);
             else if (!result.IsSuccess)
             {
-                string query = msg.Content.Substring(argPos);
-                if (!MainHandler.QueryHandler.IsReady())
+                if (!_mainHandler.QueryHandler.IsReady())
                 {
-                    await msg.Channel.SendMessageAsync("Loading cache..."); //TODO: Change message
+                    return ("Loading cache...", null, null); //TODO: Change message
                 }
                 else
                 {
                     try
                     {
-                        var tuple = await MainHandler.QueryHandler.RunAsync(query);
-                        await msg.Channel.SendMessageAsync(tuple.Item1, false, tuple.Item2);
+                        var tuple = await _mainHandler.QueryHandler.RunAsync(message);
+                        if (tuple.Item2 is PaginatorBuilder pag)
+                        {
+                            var paginated = new PaginatedMessage(pag.Pages, "Results", user: msg.Author, options: new AppearanceOptions { Timeout = TimeSpan.FromMinutes(10) });
+                            return (null, null, paginated);
+                        }
+                        else
+                            return (tuple.Item1, tuple.Item2, null);
                     }
                     catch (Exception e)
                     {
-                        await msg.Channel.SendMessageAsync("Uh-oh... I think some pipes have broken...");
                         Console.WriteLine(e.ToString());
+                        return ("Uh-oh... I think some pipes have broken...", null, null);
                     }
                 }
             }
+            return (null, null, null);
+        }
+
+        public void AddCache(ulong userMessageId, ulong ourMessageId)
+        {
+            cache.Set(userMessageId, ourMessageId, new MemoryCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10) });
+        }
+
+        public ulong? GetOurMessageIdFromCache(ulong messageId)
+        {
+            if (cache.TryGetValue<ulong>(messageId, out ulong id))
+                return id;
+            return null;
         }
 
         public async Task<EmbedBuilder> HelpEmbedBuilderAsync(ICommandContext context, string command = null)
@@ -91,13 +169,13 @@ namespace DiscordNet.Handlers
             StringBuilder sb = new StringBuilder();
             if (command == null)
             {
-                foreach (ModuleInfo mi in commands.Modules.OrderBy(x => x.Name))
+                foreach (ModuleInfo mi in _commands.Modules.OrderBy(x => x.Name))
                     if (!mi.IsSubmodule)
                         if (mi.Name != "Help")
                         {
                             bool ok = true;
                             foreach (PreconditionAttribute precondition in mi.Preconditions)
-                                if (!(await precondition.CheckPermissions(context, null, services)).IsSuccess)
+                                if (!(await precondition.CheckPermissions(context, null, _services)).IsSuccess)
                                 {
                                     ok = false;
                                     break;
@@ -110,7 +188,7 @@ namespace DiscordNet.Handlers
                                 {
                                     object o = cmds[i];
                                     foreach (PreconditionAttribute precondition in ((o as CommandInfo)?.Preconditions ?? (o as ModuleInfo)?.Preconditions))
-                                        if (!(await precondition.CheckPermissions(context, o as CommandInfo, services)).IsSuccess)
+                                        if (!(await precondition.CheckPermissions(context, o as CommandInfo, _services)).IsSuccess)
                                             cmds.Remove(o);
                                 }
                                 if (cmds.Count != 0)
@@ -131,23 +209,24 @@ namespace DiscordNet.Handlers
                 {
                     x.IsInline = true;
                     x.Name = "Keywords";
-                    x.Value = "search, first, method, type,\nproperty, event, in";
+                    x.Value = "method, type, property,\nevent, in, list";
                 });
                 eb.AddField((x) =>
                 {
                     x.IsInline = true;
                     x.Name = "Examples";
                     x.Value = "EmbedBuilder\n" +
+                              "IGuildUser.Nickname\n" +
                               "ModifyAsync in IRole\n" +
-                              "search send message first method\n" +
-                              "IGuildUser.Nickname";
+                              "send message\n" +
+                              "type Emote";
                 });
                 eb.Footer = new EmbedFooterBuilder().WithText("Note: (i) = Inherited");
                 eb.Description = sb.ToString();
             }
             else
             {
-                SearchResult sr = commands.Search(context, command);
+                SearchResult sr = _commands.Search(context, command);
                 if (sr.IsSuccess)
                 {
                     Nullable<CommandMatch> cmd = null;
@@ -167,10 +246,10 @@ namespace DiscordNet.Handlers
                             command = command.Substring(0, lastIndex);
                         }
                     }
-                    if (cmd != null && (await cmd.Value.CheckPreconditionsAsync(context, services)).IsSuccess)
+                    if (cmd != null && (await cmd.Value.CheckPreconditionsAsync(context, _services)).IsSuccess)
                     {
                         eb.Author.Name = $"Help: {cmd.Value.Command.Aliases.First()}";
-                        sb.Append($"Usage: {MainHandler.Prefix}{cmd.Value.Command.Aliases.First()}");
+                        sb.Append($"Usage: {_mainHandler.Prefix}{cmd.Value.Command.Aliases.First()}");
                         if (cmd.Value.Command.Parameters.Count != 0)
                             sb.Append($" [{String.Join("] [", cmd.Value.Command.Parameters.Select(x => x.Name))}]");
                         if (!String.IsNullOrEmpty(cmd.Value.Command.Summary))

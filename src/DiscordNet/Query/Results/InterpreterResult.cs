@@ -8,11 +8,11 @@
         public bool SearchMethods { get; internal set; }
         public bool SearchProperties { get; internal set; }
         public bool SearchEvents { get; internal set; }
-        public bool TakeFirst { get; internal set; }
+        public bool IsList { get; internal set; }
         public SearchType Search { get; internal set; }
         public bool IsSuccess { get; internal set; }
         public string Error { get; internal set; }
-        public InterpreterResult(string text, string nspace = null, bool takeFirst = false, SearchType search = SearchType.NONE, bool searchTypes = true, bool searchMethods = true, bool searchProperties = true, bool searchEvents = true)
+        public InterpreterResult(string text, string nspace = null, SearchType search = SearchType.NONE, bool searchTypes = true, bool searchMethods = true, bool searchProperties = true, bool searchEvents = true, bool isList = false)
         {
             Text = text;
             Namespace = nspace;
@@ -20,7 +20,7 @@
             SearchMethods = searchMethods;
             SearchProperties = searchProperties;
             SearchEvents = searchEvents;
-            TakeFirst = takeFirst;
+            IsList = isList;
             Search = search;
             Error = null;
             IsSuccess = true;

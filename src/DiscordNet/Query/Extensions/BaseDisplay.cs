@@ -147,11 +147,6 @@ namespace DiscordNet.Query
             return o.GetType().ToString();
         }
 
-        private List<string> GetNamespaces(IEnumerable<object> list)
-        {
-            return list.Select(x => GetNamespace(x)).ToList();
-        }
-
         public static string GetNamespace(object o, bool withInheritanceMarkup = true)
         {
             if (o is TypeInfoWrapper typeWrapper)
@@ -165,6 +160,19 @@ namespace DiscordNet.Query
             return o.GetType().Namespace;
         }
 
+        public static string GetParent(object o, bool withInheritanceMarkup = true)
+        {
+            if (o is TypeInfoWrapper typeWrapper)
+                return typeWrapper.DisplayName;
+            if (o is MethodInfoWrapper method)
+                return method.Parent.DisplayName;
+            if (o is PropertyInfoWrapper property)
+                return property.Parent.DisplayName;
+            if (o is EventInfoWrapper eve)
+                return eve.Parent.DisplayName;
+            return o.GetType().Name;
+        }
+
         private string BuildType(Type type)
         {
             string name = type.Name;
@@ -174,8 +182,46 @@ namespace DiscordNet.Query
             string generic = "";
             if (type.IsConstructedGenericType)
                 generic = $"<{String.Join(", ", type.GetGenericArguments().Select(x => BuildType(x)))}>";
-            return $"{name}{generic}";
+            return $"{GetTypeName(type, name)}{generic}";
         }
+
+        private string GetTypeName(Type type, string name)
+        {
+            return Aliases.ContainsKey(type) ? Aliases[type] : name;
+        }
+
+        private static readonly Dictionary<Type, string> Aliases = new Dictionary<Type, string>()
+        {
+            { typeof(byte), "byte" },
+            { typeof(sbyte), "sbyte" },
+            { typeof(short), "short" },
+            { typeof(ushort), "ushort" },
+            { typeof(int), "int" },
+            { typeof(uint), "uint" },
+            { typeof(long), "long" },
+            { typeof(ulong), "ulong" },
+            { typeof(float), "float" },
+            { typeof(double), "double" },
+            { typeof(decimal), "decimal" },
+            { typeof(object), "object" },
+            { typeof(bool), "bool" },
+            { typeof(char), "char" },
+            { typeof(string), "string" },
+            { typeof(void), "void" },
+            { typeof(Nullable<byte>), "byte?" },
+            { typeof(Nullable<sbyte>), "sbyte?" },
+            { typeof(Nullable<short>), "short?" },
+            { typeof(Nullable<ushort>), "ushort?" },
+            { typeof(Nullable<int>), "int?" },
+            { typeof(Nullable<uint>), "uint?" },
+            { typeof(Nullable<long>), "long?" },
+            { typeof(Nullable<ulong>), "ulong?" },
+            { typeof(Nullable<float>), "float?" },
+            { typeof(Nullable<double>), "double?" },
+            { typeof(Nullable<decimal>), "decimal?" },
+            { typeof(Nullable<bool>), "bool?" },
+            { typeof(Nullable<char>), "char?" }
+        };
 
         private string StripTags(string source)
         {
@@ -203,6 +249,22 @@ namespace DiscordNet.Query
                 }
             }
             return new string(array, 0, arrayIndex);
+        }
+
+        private string FormatGithubUrl(string url)
+        {
+            return $"[{url.Substring(url.LastIndexOf('/') + 1)}]({url})";
+        }
+
+        private string FormatDocsUrl(string url)
+        {
+            var idx = url.IndexOf('#');
+            string[] arr;
+            if (idx == -1)
+                arr = url.Substring(0).Split('.');
+            else
+                arr = url.Substring(0, idx).Split('.');
+            return $"[{arr.ElementAt(arr.Length - 2)}.html]({url})";
         }
     }
 }

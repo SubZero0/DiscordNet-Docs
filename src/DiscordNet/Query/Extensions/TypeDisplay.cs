@@ -1,4 +1,5 @@
 ﻿using Discord;
+using DiscordNet.Github;
 using DiscordNet.Query.Results;
 using DiscordNet.Query.Wrappers;
 using System;
@@ -29,10 +30,18 @@ namespace DiscordNet.Query
             eab.Url = result.Url;//$"https://discord.foxbot.me/docs/api/{first.Namespace}.{first.Name}.html";
             eb.AddField((x) =>
             {
-                x.IsInline = false;
+                x.IsInline = true;
                 x.Name = "Docs:";
-                x.Value = eab.Url;
+                x.Value = FormatDocsUrl(eab.Url);
             });
+            var githubUrl = await GithubRest.GetTypeUrlAsync(first);
+            if (githubUrl != null)
+                eb.AddField((x) =>
+                {
+                    x.IsInline = true;
+                    x.Name = "Source:";
+                    x.Value = FormatGithubUrl(githubUrl);
+                });
             if (result.Summary != null)
                 eb.AddField((x) =>
                 {

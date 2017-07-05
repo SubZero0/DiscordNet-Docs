@@ -1,4 +1,5 @@
 ﻿using Discord;
+using DiscordNet.Github;
 using DiscordNet.Query.Results;
 using DiscordNet.Query.Wrappers;
 using System;
@@ -31,10 +32,20 @@ namespace DiscordNet.Query
             eab.Url = result.Url;
             eb.AddField((x) =>
             {
-                x.IsInline = false;
+                x.IsInline = true;
                 x.Name = "Docs:";
-                x.Value = result.Url;
+                x.Value = FormatDocsUrl(eab.Url);
             });
+            var githubUrl = await GithubRest.GetMethodUrlAsync(first);
+            if (githubUrl != null)
+            {
+                eb.AddField((x) =>
+                {
+                    x.IsInline = true;
+                    x.Name = "Source:";
+                    x.Value = FormatGithubUrl(githubUrl);
+                });
+            }
             if (result.Summary != null)
                 eb.AddField((x) =>
                 {
@@ -80,11 +91,6 @@ namespace DiscordNet.Query
             return final;
         }
 
-        private bool CompareTypes(Type t1, Type t2)
-        {
-            return t1.FullName.StartsWith(t2.FullName);
-        }
-
         private string BuildMethod(MethodInfo mi)
         {
             IEnumerable<string> parameters;
@@ -105,8 +111,20 @@ namespace DiscordNet.Query
         private string GetParameterDefaultValue(ParameterInfo pi)
         {
             if (pi.HasDefaultValue)
-                return $" = {pi.DefaultValue?.ToString() ?? "null"}";
+                return $" = {GetDefaultValueAsString(pi.DefaultValue)}";
             return "";
+        }
+
+        private string GetDefaultValueAsString(object obj)
+        {
+            if (obj == null)
+                return "null";
+            switch (obj)
+            {
+                case false: return "false";
+                case true: return "true";
+                default: return obj.ToString();
+            }
         }
     }
 }

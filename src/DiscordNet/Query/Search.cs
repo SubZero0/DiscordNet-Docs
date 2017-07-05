@@ -2,7 +2,6 @@
 using DiscordNet.Query.Wrappers;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 
@@ -31,11 +30,6 @@ namespace DiscordNet.Query
             if (_result.SearchEvents)
                 found.AddRange(_cache.SearchEvents(_result.Text, !searchText));
             found = NamespaceFilter(found, _result.Search == SearchType.NONE || _result.Search == SearchType.JUST_TEXT);
-            if (_result.TakeFirst && found.Count > 0)
-            {
-                var first = found.First();
-                return new SearchResult<object>(found.Where(x => ResultDisplay.GetPath(x, false) == ResultDisplay.GetPath(first, false)).ToList());
-            }
             return new SearchResult<object>(found);
         }
 

@@ -1,5 +1,8 @@
 ﻿using Discord;
+using Discord.Addons.Paginator;
+using DiscordNet.Controllers;
 using DiscordNet.Query;
+using DiscordNet.Query.Results;
 using System;
 using System.Threading.Tasks;
 
@@ -18,29 +21,28 @@ namespace DiscordNet.Handlers
             Cache.Initialize();
         }
 
-        public async Task<Tuple<string, EmbedBuilder>> RunAsync(string text)
+        public async Task<(string, EmbedBuilder)> RunAsync(string text)
         {
             var interpreterResult = new TextInterpreter(text).Run();
             if (!interpreterResult.IsSuccess)
-                return Tuple.Create($"{interpreterResult.Error}", (EmbedBuilder)null);
-            var searchResult = new Search(interpreterResult, Cache).Run();
+                return ($"{interpreterResult.Error}", null);
 
-            if (searchResult.Count != 0)
-                return Tuple.Create("", await new ResultDisplay(searchResult, Cache).RunAsync());
+            EmbedBuilder result;
+            if (interpreterResult.Search == SearchType.JUST_NAMESPACE)
+                result = await SearchAsync(interpreterResult, SearchType.NONE) ?? await SearchAsync(interpreterResult, SearchType.JUST_NAMESPACE) ?? await SearchAsync(interpreterResult, SearchType.JUST_TEXT) ?? await SearchAsync(interpreterResult, SearchType.ALL);
             else
-            {
-                if (interpreterResult.Search != SearchType.JUST_TEXT && interpreterResult.Search != SearchType.ALL)
-                {
-                    if (interpreterResult.Search == SearchType.JUST_NAMESPACE)
-                        interpreterResult.Search = SearchType.ALL;
-                    else
-                        interpreterResult.Search = SearchType.JUST_TEXT;
-                    searchResult = new Search(interpreterResult, Cache).Run();
-                    if (searchResult.Count != 0)
-                        return Tuple.Create("", await new ResultDisplay(searchResult, Cache).RunAsync());
-                }
-                return Tuple.Create($"No results found for ``{text}``.", (EmbedBuilder)null);
-            }
+                result = await SearchAsync(interpreterResult, SearchType.NONE) ?? await SearchAsync(interpreterResult, SearchType.JUST_TEXT) ?? await SearchAsync(interpreterResult, SearchType.JUST_NAMESPACE) ?? await SearchAsync(interpreterResult, SearchType.ALL);
+
+            return result == null ? ($"No results found for ``{text}``.", null) : ("", result);
+        }
+
+        private async Task<EmbedBuilder> SearchAsync(InterpreterResult interpreterResult, SearchType type)
+        {
+            interpreterResult.Search = type;
+            var searchResult = new Search(interpreterResult, Cache).Run();
+            if (searchResult.Count != 0)
+                return await new ResultDisplay(searchResult, Cache, interpreterResult.IsList).RunAsync();
+            return null;
         }
 
         public bool IsReady()

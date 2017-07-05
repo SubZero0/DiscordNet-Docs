@@ -148,7 +148,7 @@ namespace DiscordNet.Query
         private void Populate()
         {
             foreach (var a in Assembly.GetEntryAssembly().GetReferencedAssemblies())
-                if (a.Name.StartsWith("Discord"))
+                if (a.Name.StartsWith("Discord") && !a.Name.StartsWith("Discord.Addons"))
                     foreach (Type type in Assembly.Load(a).GetExportedTypes())
                         LoadType(type);
         }
@@ -157,6 +157,8 @@ namespace DiscordNet.Query
         {
             if (type.IsGenericParameter)
                 type = type.GetGenericTypeDefinition();
+            if (!CheckNamespace(type.Namespace))
+                return;
             if (allTypes.Keys.FirstOrDefault(x => x.TypeInfo == type.GetTypeInfo()) == null)
             {
                 TypeInfoWrapper tiw = new TypeInfoWrapper(type.GetTypeInfo());
@@ -164,7 +166,7 @@ namespace DiscordNet.Query
                 allTypes[tiw] = cb;
                 foreach (MethodInfo mi in type.GetRuntimeMethods())
                 {
-                    if (mi.DeclaringType.Namespace.StartsWith("Discord") && (mi.IsPublic || mi.IsFamily) && !mi.IsSpecialName && !cb.Methods.Contains(mi))
+                    if (CheckNamespace(mi.DeclaringType.Namespace) && (mi.IsPublic || mi.IsFamily) && !mi.IsSpecialName && !cb.Methods.Contains(mi))
                         cb.Methods.Add(mi);
                     if (mi.IsDefined(typeof(ExtensionAttribute), false) && mi.IsStatic && mi.IsPublic)
                     {
@@ -188,10 +190,10 @@ namespace DiscordNet.Query
 
         private void LoadInterface(Type _interface, TypeInfoWrapper parent)
         {
-            if (_interface.Namespace.StartsWith("Discord"))
+            if (CheckNamespace(_interface.Namespace))
                 LoadType(_interface);
             foreach (MethodInfo mi in _interface.GetRuntimeMethods())
-                if (mi.DeclaringType.Namespace.StartsWith("Discord") && (mi.IsPublic || mi.IsFamily) && !mi.IsSpecialName && !allTypes[parent].Methods.Contains(mi))
+                if (CheckNamespace(mi.DeclaringType.Namespace) && (mi.IsPublic || mi.IsFamily) && !mi.IsSpecialName && !allTypes[parent].Methods.Contains(mi))
                     if (!allTypes[parent].Methods.Contains(mi))
                         allTypes[parent].Methods.Add(mi);
             foreach (PropertyInfo pi in _interface.GetRuntimeProperties())
@@ -207,6 +209,11 @@ namespace DiscordNet.Query
         public bool IsReady()
         {
             return ready;
+        }
+
+        private bool CheckNamespace(string ns)
+        {
+            return ns.StartsWith("Discord") && !ns.StartsWith("Discord.Net");
         }
     }
 }
