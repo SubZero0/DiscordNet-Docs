@@ -182,12 +182,14 @@ namespace DiscordNet.Query
             string generic = "";
             if (type.IsConstructedGenericType)
                 generic = $"<{String.Join(", ", type.GetGenericArguments().Select(x => BuildType(x)))}>";
-            return $"{GetTypeName(type, name)}{generic}";
+            return $"{GetTypeName(type, name, generic)}";
         }
 
-        private string GetTypeName(Type type, string name)
+        private string GetTypeName(Type type, string name, string generic)
         {
-            return Aliases.ContainsKey(type) ? Aliases[type] : name;
+            if (type.IsInstanceOfType(typeof(Nullable<>)))
+                return $"{generic}?";
+            return Aliases.ContainsKey(type) ? Aliases[type] : $"{name}{generic}";
         }
 
         private static readonly Dictionary<Type, string> Aliases = new Dictionary<Type, string>()
@@ -207,20 +209,7 @@ namespace DiscordNet.Query
             { typeof(bool), "bool" },
             { typeof(char), "char" },
             { typeof(string), "string" },
-            { typeof(void), "void" },
-            { typeof(Nullable<byte>), "byte?" },
-            { typeof(Nullable<sbyte>), "sbyte?" },
-            { typeof(Nullable<short>), "short?" },
-            { typeof(Nullable<ushort>), "ushort?" },
-            { typeof(Nullable<int>), "int?" },
-            { typeof(Nullable<uint>), "uint?" },
-            { typeof(Nullable<long>), "long?" },
-            { typeof(Nullable<ulong>), "ulong?" },
-            { typeof(Nullable<float>), "float?" },
-            { typeof(Nullable<double>), "double?" },
-            { typeof(Nullable<decimal>), "decimal?" },
-            { typeof(Nullable<bool>), "bool?" },
-            { typeof(Nullable<char>), "char?" }
+            { typeof(void), "void" }
         };
 
         private string StripTags(string source)
