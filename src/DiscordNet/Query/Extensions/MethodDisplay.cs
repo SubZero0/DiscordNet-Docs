@@ -95,10 +95,10 @@ namespace DiscordNet.Query
         {
             IEnumerable<string> parameters;
             if (mi.IsDefined(typeof(ExtensionAttribute)))
-                parameters = mi.GetParameters().Skip(1).Select(x => $"{BuildType(x.ParameterType)} {x.Name}{GetParameterDefaultValue(x)}");
+                parameters = mi.GetParameters().Skip(1).Select(x => $"{Utils.BuildType(x.ParameterType)} {x.Name}{GetParameterDefaultValue(x)}");
             else
-                parameters = mi.GetParameters().Select(x => $"{BuildPreParameter(x)}{BuildType(x.ParameterType)} {x.Name}{GetParameterDefaultValue(x)}");
-            return $"{BuildType(mi.ReturnType)} {mi.Name}({String.Join(", ", parameters)})";
+                parameters = mi.GetParameters().Select(x => $"{BuildPreParameter(x)}{Utils.BuildType(x.ParameterType)} {x.Name}{GetParameterDefaultValue(x)}");
+            return $"{Utils.BuildType(mi.ReturnType)} {mi.Name}({String.Join(", ", parameters)})";
         }
 
         private string BuildPreParameter(ParameterInfo pi)

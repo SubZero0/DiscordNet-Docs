@@ -161,7 +161,7 @@ namespace DiscordNet.Query
                 return;
             if (allTypes.Keys.FirstOrDefault(x => x.TypeInfo == type.GetTypeInfo()) == null)
             {
-                TypeInfoWrapper tiw = new TypeInfoWrapper(type.GetTypeInfo());
+                TypeInfoWrapper tiw = new TypeInfoWrapper(type);
                 CacheBag cb = new CacheBag();
                 allTypes[tiw] = cb;
                 foreach (MethodInfo mi in type.GetRuntimeMethods())

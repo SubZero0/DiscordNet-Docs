@@ -1,11 +1,9 @@
 ﻿using DiscordNet.Query.Results;
 using DiscordNet.Query.Wrappers;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -79,7 +77,7 @@ namespace DiscordNet.Query
             if (o is TypeInfoWrapper type)
                 return rgx.Replace($"{type.TypeInfo.Namespace}_{type.TypeInfo.Name}", "_");
             if (o is MethodInfoWrapper method)
-                return rgx.Replace($"{(useParent ? method.Parent.TypeInfo.Namespace : method.Method.DeclaringType.Namespace)}_{(useParent ? method.Parent.TypeInfo.Name : method.Method.DeclaringType.Name)}_{method.Method.Name}_", "_");
+                return rgx.Replace($"{(useParent ? method.Parent.TypeInfo.Namespace : method.Method.DeclaringType.Namespace)}_{(useParent ? method.Parent.TypeInfo.Name : method.Method.DeclaringType.Name)}_{method.Method.Name}", "_");
             if (o is PropertyInfoWrapper property)
                 return rgx.Replace($"{(useParent ? property.Parent.TypeInfo.Namespace : property.Property.DeclaringType.Namespace)}_{(useParent ? property.Parent.TypeInfo.Name : property.Property.DeclaringType.Name)}_{property.Property.Name}", "_");
             if (o is EventInfoWrapper eve)
@@ -93,7 +91,7 @@ namespace DiscordNet.Query
             return text.Replace('`', '-');
         }
 
-        public static bool IsInherited(object o)
+        public bool IsInherited(object o)
         {
             if (o is PropertyInfoWrapper property)
                 return $"{property.Parent.TypeInfo.Namespace}.{property.Parent.TypeInfo.Name}" != $"{property.Property.DeclaringType.Namespace}.{property.Property.DeclaringType.Name}";
@@ -107,7 +105,7 @@ namespace DiscordNet.Query
             return list.Select(x => GetPath(x)).ToList();
         }
 
-        public static string GetPath(object o, bool withInheritanceMarkup = true)
+        public string GetPath(object o, bool withInheritanceMarkup = true)
         {
             if (o is TypeInfoWrapper typeWrapper)
             {
@@ -127,7 +125,7 @@ namespace DiscordNet.Query
             return o.GetType().ToString();
         }
 
-        public static string GetSimplePath(object o)
+        public string GetSimplePath(object o)
         {
             if (o is TypeInfoWrapper typeWrapper)
             {
@@ -147,7 +145,7 @@ namespace DiscordNet.Query
             return o.GetType().ToString();
         }
 
-        public static string GetNamespace(object o, bool withInheritanceMarkup = true)
+        public string GetNamespace(object o, bool withInheritanceMarkup = true)
         {
             if (o is TypeInfoWrapper typeWrapper)
                 return typeWrapper.TypeInfo.Namespace;
@@ -160,7 +158,7 @@ namespace DiscordNet.Query
             return o.GetType().Namespace;
         }
 
-        public static string GetParent(object o, bool withInheritanceMarkup = true)
+        public string GetParent(object o, bool withInheritanceMarkup = true)
         {
             if (o is TypeInfoWrapper typeWrapper)
                 return typeWrapper.DisplayName;
@@ -172,45 +170,6 @@ namespace DiscordNet.Query
                 return eve.Parent.DisplayName;
             return o.GetType().Name;
         }
-
-        private string BuildType(Type type)
-        {
-            string name = type.Name;
-            int idx;
-            if ((idx = name.IndexOf('`')) != -1)
-                name = name.Substring(0, idx);
-            string generic = "";
-            if (type.IsConstructedGenericType)
-                generic = $"<{String.Join(", ", type.GetGenericArguments().Select(x => BuildType(x)))}>";
-            return $"{GetTypeName(type, name, generic)}";
-        }
-
-        private string GetTypeName(Type type, string name, string generic)
-        {
-            if (type.IsInstanceOfType(typeof(Nullable<>)))
-                return $"{generic}?";
-            return Aliases.ContainsKey(type) ? Aliases[type] : $"{name}{generic}";
-        }
-
-        private static readonly Dictionary<Type, string> Aliases = new Dictionary<Type, string>()
-        {
-            { typeof(byte), "byte" },
-            { typeof(sbyte), "sbyte" },
-            { typeof(short), "short" },
-            { typeof(ushort), "ushort" },
-            { typeof(int), "int" },
-            { typeof(uint), "uint" },
-            { typeof(long), "long" },
-            { typeof(ulong), "ulong" },
-            { typeof(float), "float" },
-            { typeof(double), "double" },
-            { typeof(decimal), "decimal" },
-            { typeof(object), "object" },
-            { typeof(bool), "bool" },
-            { typeof(char), "char" },
-            { typeof(string), "string" },
-            { typeof(void), "void" }
-        };
 
         private string StripTags(string source)
         {

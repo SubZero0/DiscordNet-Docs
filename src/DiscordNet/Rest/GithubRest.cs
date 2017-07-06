@@ -1,12 +1,10 @@
 ﻿using DiscordNet.Query.Wrappers;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.Text;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 
@@ -57,14 +55,14 @@ namespace DiscordNet.Github
 
         public static async Task<string> GetTypeUrlAsync(TypeInfoWrapper type)
         {
-            var search = await SearchAsync(type.TypeInfo.Name, $"{type.TypeInfo.Name}.cs");
-            return search.FirstOrDefault(x => x.Name == $"{type.TypeInfo.Name}.cs")?.HtmlUrl ?? search.FirstOrDefault()?.HtmlUrl ?? "Not found";
+            var search = await SearchAsync(type.Name, $"{type.Name}.cs");
+            return search.FirstOrDefault(x => x.Name == $"{type.Name}.cs")?.HtmlUrl ?? search.FirstOrDefault()?.HtmlUrl ?? null; //null = Not found
         }
 
         public static async Task<string> GetEventUrlAsync(EventInfoWrapper ev)
         {
-            var search = await SearchAsync(ev.Parent.TypeInfo.Name, $"{ev.Parent.TypeInfo.Name}.Events.cs");
-            var result = search.FirstOrDefault(x => x.Name == $"{ev.Parent.TypeInfo.Name}.Events.cs")?.HtmlUrl ?? search.FirstOrDefault()?.HtmlUrl;
+            var search = await SearchAsync(ev.Parent.Name, $"{ev.Parent.Name}.Events.cs");
+            var result = search.FirstOrDefault(x => x.Name == $"{ev.Parent.Name}.Events.cs")?.HtmlUrl ?? search.FirstOrDefault()?.HtmlUrl;
             if (result != null)
             {
                 using (var client = new HttpClient())
@@ -86,8 +84,8 @@ namespace DiscordNet.Github
 
         public static async Task<string> GetMethodUrlAsync(MethodInfoWrapper method)
         {
-            var search = await SearchAsync(method.Method.Name, $"{method.Parent.TypeInfo.Name}.cs");
-            var result = search.FirstOrDefault(x => x.Name == $"{method.Parent.TypeInfo.Name}.cs")?.HtmlUrl ?? search.FirstOrDefault()?.HtmlUrl;
+            var search = await SearchAsync(method.Method.Name, $"{method.Parent.Name}.cs");
+            var result = search.FirstOrDefault(x => x.Name == $"{method.Parent.Name}.cs")?.HtmlUrl ?? search.FirstOrDefault()?.HtmlUrl;
             if (result != null)
             {
                 using (var client = new HttpClient())
@@ -109,8 +107,8 @@ namespace DiscordNet.Github
 
         public static async Task<string> GetPropertyUrlAsync(PropertyInfoWrapper property)
         {
-            var search = await SearchAsync(property.Property.Name, $"{property.Parent.TypeInfo.Name}.cs");
-            var result = search.FirstOrDefault(x => x.Name == $"{property.Parent.TypeInfo.Name}.cs")?.HtmlUrl ?? search.FirstOrDefault()?.HtmlUrl;
+            var search = await SearchAsync(property.Property.Name, $"{property.Parent.Name}.cs");
+            var result = search.FirstOrDefault(x => x.Name == $"{property.Parent.Name}.cs")?.HtmlUrl ?? search.FirstOrDefault()?.HtmlUrl;
             if(result != null)
             {
                 using (var client = new HttpClient())

@@ -7,13 +7,15 @@ namespace DiscordNet.Query.Wrappers
     {
         public TypeInfo TypeInfo { get; private set; }
         public string DisplayName { get; private set; }
-        public TypeInfoWrapper(TypeInfo typeInfo)
+        public string Name { get; private set; }
+        public TypeInfoWrapper(Type type)
         {
-            TypeInfo = typeInfo;
-            DisplayName = typeInfo.Name;
+            TypeInfo = type.GetTypeInfo();
+            DisplayName = Utils.BuildType(type);
+            Name = type.Name;
             int idx;
-            if ((idx = DisplayName.IndexOf('`')) != -1)
-                DisplayName = $"{DisplayName.Substring(0, idx)}<{typeInfo.GetGenericArguments()[0]}>"; //TODO: Only valid with one generic argument, could be more
+            if ((idx = Name.IndexOf('`')) != -1)
+                Name = Name.Substring(0, idx);
         }
     }
 }

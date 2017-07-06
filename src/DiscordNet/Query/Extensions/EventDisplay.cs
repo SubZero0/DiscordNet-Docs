@@ -73,7 +73,7 @@ namespace DiscordNet.Query
         {
             IEnumerable<Type> par = ev.Event.EventHandlerType.GenericTypeArguments;
             par = par.Take(par.Count() - 1);
-            return $"({String.Join(", ", par.Select(x => $"{BuildType(x)}"))})";
+            return $"({String.Join(", ", par.Select(x => $"{Utils.BuildType(x)}"))})";
         }
     }
 }

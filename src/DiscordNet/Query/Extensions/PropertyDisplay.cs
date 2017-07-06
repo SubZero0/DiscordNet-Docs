@@ -59,7 +59,7 @@ namespace DiscordNet.Query
             {
                 x.IsInline = false;
                 x.Name = "Return type:";
-                x.Value = BuildType(first.Property.PropertyType);
+                x.Value = Utils.BuildType(first.Property.PropertyType);
             });
             /*eb.AddField((x) =>
             {
