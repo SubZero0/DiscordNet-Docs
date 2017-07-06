@@ -82,7 +82,7 @@ namespace DiscordNet.Handlers
                             pagination.StopTrackingPaginatedMessage(id.Value);
                             _ = botMessage.RemoveAllReactionsAsync();
                         }
-                        await (await after.Channel.GetMessageAsync(id.Value) as IUserMessage).ModifyAsync(x => { x.Content = reply.Item1; x.Embed = reply.Item2.Build(); });
+                        await (await after.Channel.GetMessageAsync(id.Value) as IUserMessage).ModifyAsync(x => { x.Content = reply.Item1; x.Embed = reply.Item2?.Build(); });
                     }
                 }
             });
