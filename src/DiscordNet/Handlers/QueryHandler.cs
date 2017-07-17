@@ -1,9 +1,6 @@
 ﻿using Discord;
-using Discord.Addons.Paginator;
-using DiscordNet.Controllers;
 using DiscordNet.Query;
 using DiscordNet.Query.Results;
-using System;
 using System.Threading.Tasks;
 
 namespace DiscordNet.Handlers
@@ -11,6 +8,8 @@ namespace DiscordNet.Handlers
     public class QueryHandler
     {
         public Cache Cache { get; private set; }
+        public static string DocsBaseUrl { get; set; } = "https://discord.foxbot.me/docs/";
+
         public QueryHandler()
         {
             Cache = new Cache();

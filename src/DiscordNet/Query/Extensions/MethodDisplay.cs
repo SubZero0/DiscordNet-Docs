@@ -1,5 +1,6 @@
 ﻿using Discord;
 using DiscordNet.Github;
+using DiscordNet.Handlers;
 using DiscordNet.Query.Results;
 using DiscordNet.Query.Wrappers;
 using System;
@@ -21,12 +22,12 @@ namespace DiscordNet.Query
             string pageUrl = SanitizeDocsUrl($"{first.Parent.TypeInfo.Namespace}.{first.Parent.TypeInfo.Name}");
             try
             {
-                result = await GetWebDocsAsync($"https://discord.foxbot.me/docs/api/{pageUrl}.html", first);
+                result = await GetWebDocsAsync($"{QueryHandler.DocsBaseUrl}api/{pageUrl}.html", first);
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.ToString());
-                result = new DocsHttpResult($"https://discord.foxbot.me/docs/api/{pageUrl}.html{MethodToDocs(first)}");
+                result = new DocsHttpResult($"{QueryHandler.DocsBaseUrl}api/{pageUrl}.html{MethodToDocs(first)}");
             }
             eab.Name = $"Method: {first.Parent.TypeInfo.Namespace}.{first.Parent.DisplayName}.{first.Method.Name}";
             eab.Url = result.Url;

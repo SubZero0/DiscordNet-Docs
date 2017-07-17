@@ -178,7 +178,7 @@ namespace DiscordNet.Query
                 }
                 var rt = type.GetRuntimeProperties();
                 foreach (PropertyInfo pi in type.GetRuntimeProperties())
-                    if (!pi.GetMethod.IsPrivate &&!cb.Properties.Any(x => x.Name == pi.Name))
+                    if ((pi.GetMethod.IsFamily || pi.GetMethod.IsPublic) && !cb.Properties.Any(x => x.Name == pi.Name))
                         cb.Properties.Add(pi);
                 foreach (EventInfo ei in type.GetRuntimeEvents())
                     cb.Events.Add(ei);

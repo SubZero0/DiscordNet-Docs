@@ -1,5 +1,6 @@
 ﻿using Discord;
 using DiscordNet.Github;
+using DiscordNet.Handlers;
 using DiscordNet.Query.Results;
 using DiscordNet.Query.Wrappers;
 using System;
@@ -18,15 +19,15 @@ namespace DiscordNet.Query
             string pageUrl = SanitizeDocsUrl($"{first.Parent.TypeInfo.Namespace}.{first.Parent.TypeInfo.Name}");
             try
             {
-                result = await GetWebDocsAsync($"https://discord.foxbot.me/docs/api/{pageUrl}.html", first);
+                result = await GetWebDocsAsync($"{QueryHandler.DocsBaseUrl}api/{pageUrl}.html", first);
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.ToString());
-                result = new DocsHttpResult($"https://discord.foxbot.me/docs/api/{pageUrl}.html{EventToDocs(first)}");
+                result = new DocsHttpResult($"{QueryHandler.DocsBaseUrl}api/{pageUrl}.html{EventToDocs(first)}");
             }
             eab.Name = $"Event: {first.Parent.TypeInfo.Namespace}.{first.Parent.DisplayName}.{first.Event.Name}";
-            eab.Url = result.Url; //$"https://discord.foxbot.me/docs/api/{first.DeclaringType.Namespace}.{first.DeclaringType.Name}.html{EventToDocs(first)}";
+            eab.Url = result.Url; //$"{QueryHandler.DocsBaseUrl}api/{first.DeclaringType.Namespace}.{first.DeclaringType.Name}.html{EventToDocs(first)}";
             eb.AddField((x) =>
             {
                 x.IsInline = true;

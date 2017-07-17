@@ -1,6 +1,7 @@
 ﻿using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using DiscordNet.Handlers;
 using DiscordNet.Modules.Addons;
 using DiscordNet.Roslyn;
 using Microsoft.CodeAnalysis;
@@ -39,7 +40,7 @@ namespace DiscordNet.Modules
         [Summary("Show the docs url")]
         public async Task Docs()
         {
-            await ReplyAsync("Docs: https://discord.foxbot.me/docs/");
+            await ReplyAsync($"Docs: {QueryHandler.DocsBaseUrl}");
         }
 
         [Command("guides")]
@@ -84,7 +85,7 @@ namespace DiscordNet.Modules
                 {
                     sb.AppendLine($"**{category}**");
                     foreach (string subcategory in guides[category].Keys)
-                        sb.AppendLine($"- [{subcategory}](https://discord.foxbot.me/docs/guides/{guides[category][subcategory]})");
+                        sb.AppendLine($"- [{subcategory}]({QueryHandler.DocsBaseUrl}guides/{guides[category][subcategory]})");
                 }
             }
             else
@@ -103,7 +104,7 @@ namespace DiscordNet.Modules
                     if(add)
                     {
                         foreach (string subcategory in guides[category].Keys)
-                            sb.AppendLine($"- [{subcategory}](https://discord.foxbot.me/docs/guides/{guides[category][subcategory]})");
+                            sb.AppendLine($"- [{subcategory}]({QueryHandler.DocsBaseUrl}guides/{guides[category][subcategory]})");
                         break;
                     }
                 }
@@ -193,6 +194,16 @@ namespace DiscordNet.Modules
                     await ReplyAsync("", embed: new EmbedBuilder().WithTitle("Error:").WithDescription($"{e.GetType().ToString()}: {e.Message}\nFrom: {e.Source}"));
                 }
             }
+        }
+
+        [Command("setdocsurl")]
+        [RequireOwner]
+        public async Task SetDocsUrl([Remainder] string url)
+        {
+            if (!url.EndsWith("/"))
+                url = url + "/";
+            QueryHandler.DocsBaseUrl = url;
+            await ReplyAsync($"Changed base docs url to: <{url}>");
         }
     }
 

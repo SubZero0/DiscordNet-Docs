@@ -1,4 +1,5 @@
-﻿using DiscordNet.Query.Results;
+﻿using DiscordNet.Handlers;
+using DiscordNet.Query.Results;
 using DiscordNet.Query.Wrappers;
 using System.Collections.Generic;
 using System.Linq;
@@ -43,7 +44,7 @@ namespace DiscordNet.Query
                     if (!mi.Method.DeclaringType.Namespace.StartsWith("Discord"))
                         return (true, "");
                     else
-                        url = $"https://discord.foxbot.me/docs/api/{SanitizeDocsUrl($"{mi.Method.DeclaringType.Namespace}.{mi.Method.DeclaringType.Name}")}.html";
+                        url = $"{QueryHandler.DocsBaseUrl}api/{SanitizeDocsUrl($"{mi.Method.DeclaringType.Namespace}.{mi.Method.DeclaringType.Name}")}.html";
                 }
                 else
                 {
@@ -51,7 +52,7 @@ namespace DiscordNet.Query
                     if (!pi.Property.DeclaringType.Namespace.StartsWith("Discord"))
                         return (true, "");
                     else
-                        url = $"https://discord.foxbot.me/docs/api/{SanitizeDocsUrl($"{pi.Property.DeclaringType.Namespace}.{pi.Property.DeclaringType.Name}")}.html";
+                        url = $"{QueryHandler.DocsBaseUrl}api/{SanitizeDocsUrl($"{pi.Property.DeclaringType.Namespace}.{pi.Property.DeclaringType.Name}")}.html";
                 }
             }
             using (var httpClient = new HttpClient())
