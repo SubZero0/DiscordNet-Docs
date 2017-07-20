@@ -89,7 +89,7 @@ namespace DiscordNet.Query
                 {
                     x.IsInline = true;
                     x.Name = $"Some fields ({fields.Count()}/{enumValues.Length}):";
-                    x.Value = String.Join("\n", fields.Select(y => $"``{i}-`` {y}"));
+                    x.Value = String.Join("\n", fields.Select(y => $"``{i++}-`` {y}"));
                 });
             }
             return eb;
