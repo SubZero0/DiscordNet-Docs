@@ -19,15 +19,15 @@ namespace DiscordNet.Query
             string pageUrl = SanitizeDocsUrl($"{first.Parent.TypeInfo.Namespace}.{first.Parent.TypeInfo.Name}");
             try
             {
-                result = await GetWebDocsAsync($"{QueryHandler.DocsBaseUrl}api/{pageUrl}.html", first);
+                result = await GetWebDocsAsync($"{DocsUrlHandler.DocsBaseUrl}api/{pageUrl}.html", first);
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.ToString());
-                result = new DocsHttpResult($"{QueryHandler.DocsBaseUrl}api/{pageUrl}.html{PropertyToDocs(first)}");
+                result = new DocsHttpResult($"{DocsUrlHandler.DocsBaseUrl}api/{pageUrl}.html{PropertyToDocs(first)}");
             }
             eab.Name = $"Property: {first.Parent.TypeInfo.Namespace}.{first.Parent.DisplayName}.{first.Property.Name} {(IsInherited(first) ? "(i)" : "")}";
-            eab.Url = result.Url;//$"{QueryHandler.DocsBaseUrl}api/{first.Parent.Namespace}.{first.Parent.Name}.html{PropertyToDocs(first)}";
+            eab.Url = result.Url;//$"{DocsUrlHandler.DocsBaseUrl}api/{first.Parent.Namespace}.{first.Parent.Name}.html{PropertyToDocs(first)}";
             eb.AddField((x) =>
             {
                 x.IsInline = true;

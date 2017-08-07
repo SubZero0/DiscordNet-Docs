@@ -30,6 +30,8 @@ namespace DiscordNet
         {
             if (type.IsInstanceOfType(typeof(Nullable<>)))
                 return $"{generic}?";
+            if (type.IsByRef)
+                return BuildType(type.GetElementType());
             return Aliases.ContainsKey(type) ? Aliases[type] : $"{name}{generic}";
         }
 

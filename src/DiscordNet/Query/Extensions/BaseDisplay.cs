@@ -44,7 +44,7 @@ namespace DiscordNet.Query
                     if (!mi.Method.DeclaringType.Namespace.StartsWith("Discord"))
                         return (true, "");
                     else
-                        url = $"{QueryHandler.DocsBaseUrl}api/{SanitizeDocsUrl($"{mi.Method.DeclaringType.Namespace}.{mi.Method.DeclaringType.Name}")}.html";
+                        url = $"{DocsUrlHandler.DocsBaseUrl}api/{SanitizeDocsUrl($"{mi.Method.DeclaringType.Namespace}.{mi.Method.DeclaringType.Name}")}.html";
                 }
                 else
                 {
@@ -52,7 +52,7 @@ namespace DiscordNet.Query
                     if (!pi.Property.DeclaringType.Namespace.StartsWith("Discord"))
                         return (true, "");
                     else
-                        url = $"{QueryHandler.DocsBaseUrl}api/{SanitizeDocsUrl($"{pi.Property.DeclaringType.Namespace}.{pi.Property.DeclaringType.Name}")}.html";
+                        url = $"{DocsUrlHandler.DocsBaseUrl}api/{SanitizeDocsUrl($"{pi.Property.DeclaringType.Namespace}.{pi.Property.DeclaringType.Name}")}.html";
                 }
             }
             using (var httpClient = new HttpClient())

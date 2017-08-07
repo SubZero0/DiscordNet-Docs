@@ -20,15 +20,15 @@ namespace DiscordNet.Query
             string pageUrl = SanitizeDocsUrl($"{first.TypeInfo.Namespace}.{first.TypeInfo.Name}");
             try
             {
-                result = await GetWebDocsAsync($"{QueryHandler.DocsBaseUrl}api/{pageUrl}.html", first);
+                result = await GetWebDocsAsync($"{DocsUrlHandler.DocsBaseUrl}api/{pageUrl}.html", first);
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.ToString());
-                result = new DocsHttpResult($"{QueryHandler.DocsBaseUrl}api/{pageUrl}.html");
+                result = new DocsHttpResult($"{DocsUrlHandler.DocsBaseUrl}api/{pageUrl}.html");
             }
             eab.Name = $"{(first.TypeInfo.IsInterface ? "Interface" : (first.TypeInfo.IsEnum ? "Enum" : "Type"))}: {first.TypeInfo.Namespace}.{first.DisplayName}";
-            eab.Url = result.Url;//$"{QueryHandler.DocsBaseUrl}api/{first.Namespace}.{first.Name}.html";
+            eab.Url = result.Url;//$"{DocsUrlHandler.DocsBaseUrl}api/{first.Namespace}.{first.Name}.html";
             eb.AddField((x) =>
             {
                 x.IsInline = true;

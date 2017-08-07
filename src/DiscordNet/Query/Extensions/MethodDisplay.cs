@@ -22,12 +22,12 @@ namespace DiscordNet.Query
             string pageUrl = SanitizeDocsUrl($"{first.Parent.TypeInfo.Namespace}.{first.Parent.TypeInfo.Name}");
             try
             {
-                result = await GetWebDocsAsync($"{QueryHandler.DocsBaseUrl}api/{pageUrl}.html", first);
+                result = await GetWebDocsAsync($"{DocsUrlHandler.DocsBaseUrl}api/{pageUrl}.html", first);
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.ToString());
-                result = new DocsHttpResult($"{QueryHandler.DocsBaseUrl}api/{pageUrl}.html{MethodToDocs(first)}");
+                result = new DocsHttpResult($"{DocsUrlHandler.DocsBaseUrl}api/{pageUrl}.html{MethodToDocs(first)}");
             }
             eab.Name = $"Method: {first.Parent.TypeInfo.Namespace}.{first.Parent.DisplayName}.{first.Method.Name}";
             eab.Url = result.Url;
@@ -66,7 +66,7 @@ namespace DiscordNet.Query
             {
                 x.IsInline = false;
                 x.Name = "Overloads:";
-                x.Value = String.Join("\n", list.OrderBy(y => IsInherited(y)).Select(y => $"``{i++}-``{(IsInherited(y) ? " (i)" : "")} {BuildMethod(y.Method)}"));
+                x.Value = String.Join("\n", list.OrderBy(y => IsInherited(y)).Select(y => $"``{i++}-``{(IsInherited(y) ? " (i)" : "")} {BuildMethod(y)}"));
             });
             return eb;
         }
@@ -92,13 +92,15 @@ namespace DiscordNet.Query
             return final;
         }
 
-        private string BuildMethod(MethodInfo mi)
+        private string BuildMethod(MethodInfoWrapper methodWrapper)
         {
-            IEnumerable<string> parameters;
-            if (mi.IsDefined(typeof(ExtensionAttribute)))
-                parameters = mi.GetParameters().Skip(1).Select(x => $"{Utils.BuildType(x.ParameterType)} {x.Name}{GetParameterDefaultValue(x)}");
+            var mi = methodWrapper.Method;
+            IEnumerable<string> parameters = null;
+            var parametersInfo = mi.GetParameters();
+            if (mi.IsDefined(typeof(ExtensionAttribute)) && parametersInfo.First().ParameterType.IsAssignableFrom(methodWrapper.Parent.TypeInfo.AsType()))
+                parameters = parametersInfo.Skip(1).Select(x => $"{BuildPreParameter(x)}{Utils.BuildType(x.ParameterType)} {x.Name}{GetParameterDefaultValue(x)}");
             else
-                parameters = mi.GetParameters().Select(x => $"{BuildPreParameter(x)}{Utils.BuildType(x.ParameterType)} {x.Name}{GetParameterDefaultValue(x)}");
+                parameters = parametersInfo.Select(x => $"{BuildPreParameter(x)}{Utils.BuildType(x.ParameterType)} {x.Name}{GetParameterDefaultValue(x)}");
             return $"{Utils.BuildType(mi.ReturnType)} {mi.Name}({String.Join(", ", parameters)})";
         }
 
@@ -106,6 +108,8 @@ namespace DiscordNet.Query
         {
             if (pi.IsOut)
                 return "out ";
+            if (pi.ParameterType.IsByRef)
+                return "ref ";
             return "";
         }
 

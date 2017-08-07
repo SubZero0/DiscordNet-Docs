@@ -40,7 +40,7 @@ namespace DiscordNet.Modules
         [Summary("Show the docs url")]
         public async Task Docs()
         {
-            await ReplyAsync($"Docs: {QueryHandler.DocsBaseUrl}");
+            await ReplyAsync($"Docs: {DocsUrlHandler.DocsBaseUrl}");
         }
 
         [Command("guides")]
@@ -56,36 +56,45 @@ namespace DiscordNet.Modules
                     throw new Exception($"An error occurred: {res.ReasonPhrase}");
                 html = await res.Content.ReadAsStringAsync();
             }
-            Dictionary<string, Dictionary<string, string>> guides = new Dictionary<string, Dictionary<string, string>>();
-            var separate = html.Split(new string[] { "\n" }, StringSplitOptions.RemoveEmptyEntries);
+            var guides = new Dictionary<string, string>();
+            var subguides = new Dictionary<string, Dictionary<string, string>>();
+            var separate = html.Split(new[] { "\n" }, StringSplitOptions.RemoveEmptyEntries);
             string lastname = "";
             for (int i = 0; i < separate.Length; i++)
             {
                 string line = separate[i].Trim();
                 if (line.StartsWith("- name:"))
                 {
-                    lastname = line.Split(new string[] { "- name:" }, StringSplitOptions.None)[1].Trim();
+                    lastname = line.Split(new[] { "- name:" }, StringSplitOptions.None)[1].Trim();
                 }
                 else if (line.StartsWith("items:"))
                 {
-                    guides[lastname] = new Dictionary<string, string>();
+                    guides[lastname] = null;
+                    subguides[lastname] = new Dictionary<string, string>();
                 }
                 else if (line.StartsWith("href:"))
                 {
-                    string link = line.Split(new string[] { "href:" }, StringSplitOptions.None)[1].Trim();
-                    guides.Last().Value[lastname] = $"{link.Substring(0, link.Length - 2)}html";
+                    string link = line.Split(new[] { "href:" }, StringSplitOptions.None)[1].Trim();
+                    if (separate[i].StartsWith("   ")) //TODO: Change how to find subgroups
+                        subguides.Last().Value[lastname] = $"{link.Substring(0, link.Length - 2)}html";
+                    else
+                        guides[lastname] = $"{link.Substring(0, link.Length - 2)}html";
                 }
             }
             StringBuilder sb = new StringBuilder();
             EmbedAuthorBuilder eab = new EmbedAuthorBuilder { IconUrl = Context.Client.CurrentUser.GetAvatarUrl() };
-            if (guide == null)
+            if (string.IsNullOrEmpty(guide))
             {
                 eab.Name = "Guides";
                 foreach (string category in guides.Keys)
                 {
-                    sb.AppendLine($"**{category}**");
-                    foreach (string subcategory in guides[category].Keys)
-                        sb.AppendLine($"- [{subcategory}]({QueryHandler.DocsBaseUrl}guides/{guides[category][subcategory]})");
+                    if (guides[category] != null)
+                        sb.AppendLine($"[**{category}**]({guides[category]})");
+                    else
+                        sb.AppendLine($"**{category}**");
+                    if (subguides.ContainsKey(category))
+                        foreach (string subcategory in subguides[category].Keys)
+                            sb.AppendLine($"- [{subcategory}]({DocsUrlHandler.DocsBaseUrl}guides/{subguides[category][subcategory]})");
                 }
             }
             else
@@ -94,17 +103,19 @@ namespace DiscordNet.Modules
                 foreach (string category in guides.Keys)
                 {
                     eab.Name = $"Guide: {category}";
+                    if (guides.ContainsKey(category))
+                        eab.Url = guides[category];
                     bool add = false;
                     if (category.IndexOf(guide, StringComparison.OrdinalIgnoreCase) != -1)
                         add = true;
                     else
-                        foreach (string subcategory in guides[category].Keys)
+                        foreach (string subcategory in subguides[category].Keys)
                             if (subcategory.IndexOf(guide, StringComparison.OrdinalIgnoreCase) != -1)
                                 add = true;
-                    if(add)
+                    if (add)
                     {
-                        foreach (string subcategory in guides[category].Keys)
-                            sb.AppendLine($"- [{subcategory}]({QueryHandler.DocsBaseUrl}guides/{guides[category][subcategory]})");
+                        foreach (string subcategory in subguides[category].Keys)
+                            sb.AppendLine($"- [{subcategory}]({DocsUrlHandler.DocsBaseUrl}guides/{subguides[category][subcategory]})");
                         break;
                     }
                 }
@@ -202,7 +213,7 @@ namespace DiscordNet.Modules
         {
             if (!url.EndsWith("/"))
                 url = url + "/";
-            QueryHandler.DocsBaseUrl = url;
+            DocsUrlHandler.DocsBaseUrl = url;
             await ReplyAsync($"Changed base docs url to: <{url}>");
         }
     }

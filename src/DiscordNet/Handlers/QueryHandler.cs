@@ -8,7 +8,6 @@ namespace DiscordNet.Handlers
     public class QueryHandler
     {
         public Cache Cache { get; private set; }
-        public static string DocsBaseUrl { get; set; } = "https://discord.foxbot.me/docs/";
 
         public QueryHandler()
         {
