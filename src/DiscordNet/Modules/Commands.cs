@@ -43,6 +43,13 @@ namespace DiscordNet.Modules
             await ReplyAsync($"Docs: {DocsUrlHandler.DocsBaseUrl}");
         }
 
+        [Command("invite")]
+        [Summary("Show the invite url")]
+        public async Task Invite()
+        {
+            await ReplyAsync($"Invite: https://discordapp.com/oauth2/authorize?client_id=274366085011079169&scope=bot");
+        }
+
         [Command("guides")]
         [Alias("guide")]
         [Summary("Show the url of a guide")]
@@ -132,7 +139,7 @@ namespace DiscordNet.Modules
                     Author = eab,
                     Description = result
                 };
-                await ReplyAsync("", embed: eb);
+                await ReplyAsync("", embed: eb.Build());
             }
         }
 
@@ -177,7 +184,7 @@ namespace DiscordNet.Modules
                           $"- Extension types: {Context.MainHandler.QueryHandler.Cache.GetExtensionTypesCount()}\n" +
                           $"- Extension methods: {Context.MainHandler.QueryHandler.Cache.GetExtensioMethodsCount()}";
             });
-            await ReplyAsync("", false, eb);
+            await ReplyAsync("", false, eb.Build());
         }
 
         [Command("eval", RunMode = RunMode.Async)] //TODO: Safe eval ? 👀
@@ -198,11 +205,11 @@ namespace DiscordNet.Modules
                     if (o == null)
                         await ReplyAsync("Done!");
                     else
-                        await ReplyAsync("", embed: new EmbedBuilder().WithTitle("Result:").WithDescription(o.ToString()));
+                        await ReplyAsync("", embed: new EmbedBuilder().WithTitle("Result:").WithDescription(o.ToString()).Build());
                 }
                 catch (Exception e)
                 {
-                    await ReplyAsync("", embed: new EmbedBuilder().WithTitle("Error:").WithDescription($"{e.GetType().ToString()}: {e.Message}\nFrom: {e.Source}"));
+                    await ReplyAsync("", embed: new EmbedBuilder().WithTitle("Error:").WithDescription($"{e.GetType().ToString()}: {e.Message}\nFrom: {e.Source}").Build());
                 }
             }
         }
@@ -225,7 +232,7 @@ namespace DiscordNet.Modules
         [Summary("Shows the help command")]
         public async Task Help([Remainder] string command = null)
         {
-            await ReplyAsync("", embed: await Context.MainHandler.CommandHandler.HelpEmbedBuilderAsync(Context, command));
+            await ReplyAsync("", embed: (await Context.MainHandler.CommandHandler.HelpEmbedBuilderAsync(Context, command)).Build());
         }
     }
 }

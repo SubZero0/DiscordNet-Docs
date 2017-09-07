@@ -94,7 +94,7 @@ namespace DiscordNet.Handlers
             var msg = parameterMessage as SocketUserMessage;
             if (msg == null) return Task.CompletedTask;
             if (msg.Author.IsBot) return Task.CompletedTask;
-            if (!(msg.Channel is IPrivateChannel))
+            if (msg.Channel is ITextChannel tc && tc.GuildId == 81384788765712384)
                 if (msg.Channel.Name != "dotnet_discord-net" && msg.Channel.Name != "testing" && msg.Channel.Name != "playground") return Task.CompletedTask;
             int argPos = 0;
             if (!(msg.HasMentionPrefix(_client.CurrentUser, ref argPos) /*|| msg.HasStringPrefix(MainHandler.Prefix, ref argPos)*/)) return Task.CompletedTask;
@@ -111,7 +111,7 @@ namespace DiscordNet.Handlers
             if (reply.Item3 != null)
                 message = await ((PaginationService)_services.GetService(typeof(PaginationService))).SendPaginatedMessageAsync(msg.Channel, reply.Item3);
             else
-                message = await msg.Channel.SendMessageAsync(reply.Item1, embed: reply.Item2);
+                message = await msg.Channel.SendMessageAsync(reply.Item1, embed: reply.Item2?.Build());
             AddCache(msg.Id, message.Id);
         }
 
