@@ -1,6 +1,7 @@
 ﻿using DiscordNet.Handlers;
 using DiscordNet.Query.Results;
 using DiscordNet.Query.Wrappers;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -55,7 +56,7 @@ namespace DiscordNet.Query
                         url = $"{DocsUrlHandler.DocsBaseUrl}api/{SanitizeDocsUrl($"{pi.Property.DeclaringType.Namespace}.{pi.Property.DeclaringType.Name}")}.html";
                 }
             }
-            using (var httpClient = new HttpClient())
+            using (var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(5) })
             {
                 var res = await httpClient.GetAsync(url);
                 if (!res.IsSuccessStatusCode)

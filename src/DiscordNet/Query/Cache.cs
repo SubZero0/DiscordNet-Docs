@@ -1,4 +1,5 @@
-﻿using DiscordNet.Query.Wrappers;
+﻿using Discord.Webhook;
+using DiscordNet.Query.Wrappers;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -144,9 +145,14 @@ namespace DiscordNet.Query
             return true;
         }
 
+        private void ForceReference()
+        {
+            new DiscordWebhookClient(null);
+        }
+
         private void Populate()
         {
-            foreach (var a in Assembly.GetEntryAssembly().GetReferencedAssemblies())
+            foreach (var a in Assembly.GetExecutingAssembly().GetReferencedAssemblies())
                 if (a.Name.StartsWith("Discord") && !a.Name.StartsWith("Discord.Addons"))
                     foreach (Type type in Assembly.Load(a).GetExportedTypes())
                         LoadType(type);

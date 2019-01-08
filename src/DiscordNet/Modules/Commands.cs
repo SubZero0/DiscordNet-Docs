@@ -10,6 +10,7 @@ using Microsoft.CodeAnalysis.Scripting;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Reflection;
@@ -30,7 +31,7 @@ namespace DiscordNet.Modules
                 messages = 50;
             else if (messages < 2)
                 messages = 2;
-            var msgs = await Context.Channel.GetMessagesAsync(messages).Flatten();
+            var msgs = await Context.Channel.GetMessagesAsync(messages).FlattenAsync();
             msgs = msgs.Where(x => x.Author.Id == Context.Client.CurrentUser.Id);
             foreach (IMessage msg in msgs)
                 await msg.DeleteAsync();
@@ -222,6 +223,33 @@ namespace DiscordNet.Modules
                 url = url + "/";
             DocsUrlHandler.DocsBaseUrl = url;
             await ReplyAsync($"Changed base docs url to: <{url}>");
+        }
+
+        [Command("botavatar")]
+        [RequireOwner]
+        public async Task Avatar(string url)
+        {
+            MemoryStream imgStream = null;
+            try
+            {
+                using (var http = new HttpClient())
+                {
+                    using (var sr = await http.GetStreamAsync(url))
+                    {
+                        imgStream = new MemoryStream();
+                        await sr.CopyToAsync(imgStream);
+                        imgStream.Position = 0;
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                await ReplyAsync("Something went wrong while downloading the image.");
+                return;
+            }
+            await Context.Client.CurrentUser.ModifyAsync(x => x.Avatar = new Image(imgStream));
+            await ReplyAsync("Avatar changed!");
+            imgStream.Dispose();
         }
     }
 

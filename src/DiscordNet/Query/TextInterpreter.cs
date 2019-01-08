@@ -6,6 +6,8 @@ namespace DiscordNet.Query
 {
     public class TextInterpreter
     {
+        private static readonly Regex rgx = new Regex("[^0-9a-z_ ]", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.ECMAScript);
+
         private string _text;
         public TextInterpreter(string text)
         {
@@ -58,11 +60,13 @@ namespace DiscordNet.Query
                     nspace = nspace.Substring(lidx);
                 _text = _text.Replace($"{nspace}.", "");
             }
-            _text = _text.Trim();
+
+            _text = rgx.Replace(_text.Trim(), "");
+            if (nspace != null)
+                nspace = rgx.Replace(nspace.Trim(), "");
             if (_text == "")
                 return new InterpreterResult("No text to search.");
-            if (nspace != null)
-                nspace = nspace.Trim();
+
             return new InterpreterResult(_text, nspace, search, searchTypes, searchMethods, searchProperties, searchEvents, isList);
         }
     }

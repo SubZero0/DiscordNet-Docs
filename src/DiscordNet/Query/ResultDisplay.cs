@@ -12,10 +12,10 @@ namespace DiscordNet.Query
 {
     public partial class ResultDisplay
     {
-        private SearchResult<object> _result;
+        private SearchResult<BaseInfoWrapper> _result;
         private Cache _cache;
         private bool _isList;
-        public ResultDisplay(SearchResult<object> result, Cache cache, bool isList)
+        public ResultDisplay(SearchResult<BaseInfoWrapper> result, Cache cache, bool isList)
         {
             _result = result;
             _cache = cache;
@@ -33,7 +33,7 @@ namespace DiscordNet.Query
                 return await ShowMultipleAsync(list);
         }
 
-        private async Task<EmbedBuilder> ShowAsync(IEnumerable<object> o)
+        private async Task<EmbedBuilder> ShowAsync(IEnumerable<BaseInfoWrapper> o)
         {
             var first = o.First();
             EmbedAuthorBuilder eab = new EmbedAuthorBuilder();
@@ -50,16 +50,17 @@ namespace DiscordNet.Query
             return eb;
         }
 
-        private async Task<EmbedBuilder> ShowMultipleAsync(IEnumerable<IEnumerable<object>> obj)
+        private async Task<EmbedBuilder> ShowMultipleAsync(IEnumerable<IEnumerable<BaseInfoWrapper>> obj)
         {
             EmbedBuilder eb = new EmbedBuilder();
             var singleList = obj.Select(x => x.First());
             var same = singleList.GroupBy(x => GetSimplePath(x));
             if (same.Count() == 1)
             {
-                eb = await ShowAsync(obj.First());
+                var first = obj.FirstOrDefault(x => x.First().Namespace.StartsWith("Discord.WebSocket")) ?? obj.First();
+                eb = await ShowAsync(first);
                 eb.Author.Name = $"(Most likely) {eb.Author.Name}";
-                var list = singleList.Skip(1).RandomShuffle().Take(6);
+                var list = singleList.Where(x => x != first.First()).RandomShuffle().Take(6);
                 int max = (int)Math.Ceiling(list.Count() / 3.0);
                 for (int i = 0; i < max; i++)
                     eb.AddField(x =>
@@ -71,17 +72,8 @@ namespace DiscordNet.Query
             }
             else
             {
-                /*if (singleList.Count() > 10)
-                {
-                    eb.Title = $"Too many results, try filtering your search. Some results (10/{obj.Count()}):";
-                    eb.Description = string.Join("\n", GetPaths(singleList.Take(10)));
-                }
-                else
-                {
-                    eb.Title = "Did you mean:";
-                    eb.Description = string.Join("\n", GetPaths(singleList));
-                }*/
-                eb = await ShowAsync(obj.First());
+                var first = obj.First();
+                eb = await ShowAsync(first);
                 eb.Author.Name = $"(First) {eb.Author.Name}";
                 var list = singleList.Skip(1).RandomShuffle().Take(3);
                 eb.AddField(x =>
@@ -95,7 +87,7 @@ namespace DiscordNet.Query
             return eb;
         }
 
-        private EmbedBuilder ShowList(IEnumerable<IEnumerable<object>> obj)
+        private EmbedBuilder ShowList(IEnumerable<IEnumerable<BaseInfoWrapper>> obj)
         {
             PaginatorBuilder eb = new PaginatorBuilder();
             var singleList = obj.Select(x => x.First());
@@ -105,7 +97,7 @@ namespace DiscordNet.Query
             return eb;
         }
 
-        private IEnumerable<string> ToPages(IEnumerable<object> list, int pages, int size)
+        private IEnumerable<string> ToPages(IEnumerable<BaseInfoWrapper> list, int pages, int size)
         {
             for (int i = 0; i < pages; i++)
                 yield return String.Join("\n", GetPaths(list.Skip(i * size).Take(size)));

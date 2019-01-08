@@ -3,11 +3,13 @@ using System.Reflection;
 
 namespace DiscordNet.Query.Wrappers
 {
-    public class TypeInfoWrapper
+    public class TypeInfoWrapper : BaseInfoWrapper
     {
         public TypeInfo TypeInfo { get; private set; }
         public string DisplayName { get; private set; }
         public string Name { get; private set; }
+        public string Namespace { get { return TypeInfo.Namespace; } }
+
         public TypeInfoWrapper(Type type)
         {
             TypeInfo = type.GetTypeInfo();

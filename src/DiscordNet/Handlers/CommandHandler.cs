@@ -6,6 +6,7 @@ using DiscordNet.Controllers;
 using DiscordNet.EmbedExtension;
 using DiscordNet.Modules.Addons;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Linq;
 using System.Reflection;
@@ -16,7 +17,7 @@ namespace DiscordNet.Handlers
 {
     public class CommandHandler
     {
-        private CommandService _commands;
+        private CommandService _commandService;
         private DiscordSocketClient _client;
         private IServiceProvider _services;
         private MainHandler _mainHandler;
@@ -25,12 +26,12 @@ namespace DiscordNet.Handlers
         public async Task InitializeAsync(MainHandler MainHandler, IServiceProvider services)
         {
             _mainHandler = MainHandler;
-            _client = (DiscordSocketClient)services.GetService(typeof(DiscordSocketClient));
-            _commands = new CommandService();
+            _client = services.GetService<DiscordSocketClient>();
+            _commandService = new CommandService();
             _services = services;
 
-            await _commands.AddModulesAsync(Assembly.GetEntryAssembly());
-            _commands.Log += Log;
+            await _commandService.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
+            _commandService.Log += Log;
 
             _client.MessageReceived += HandleCommand;
             _client.MessageUpdated += HandleUpdate;
@@ -66,7 +67,7 @@ namespace DiscordNet.Handlers
 
                     if (reply.Item1 == null && reply.Item2 == null && reply.Item3 == null)
                         return;
-                    var pagination = (PaginationService)_services.GetService(typeof(PaginationService));
+                    var pagination = _services.GetService<PaginationService>();
                     var isPaginatedMessage = pagination.IsPaginatedMessage(id.Value);
                     if (reply.Item3 != null)
                     {
@@ -109,7 +110,7 @@ namespace DiscordNet.Handlers
                 return;
             IUserMessage message;
             if (reply.Item3 != null)
-                message = await ((PaginationService)_services.GetService(typeof(PaginationService))).SendPaginatedMessageAsync(msg.Channel, reply.Item3);
+                message = await (_services.GetService<PaginationService>()).SendPaginatedMessageAsync(msg.Channel, reply.Item3);
             else
                 message = await msg.Channel.SendMessageAsync(reply.Item1, embed: reply.Item2?.Build());
             AddCache(msg.Id, message.Id);
@@ -118,7 +119,7 @@ namespace DiscordNet.Handlers
         private async Task<(string, EmbedBuilder, PaginatedMessage)> BuildReply(IUserMessage msg, string message)
         {
             var context = new MyCommandContext(_client, _mainHandler, msg);
-            var result = await _commands.ExecuteAsync(context, message, _services);
+            var result = await _commandService.ExecuteAsync(context, message, _services);
             if (!result.IsSuccess && result.Error != CommandError.UnknownCommand)
                 return (result.ErrorReason, null, null);
             else if (!result.IsSuccess)
@@ -169,13 +170,13 @@ namespace DiscordNet.Handlers
             StringBuilder sb = new StringBuilder();
             if (command == null)
             {
-                foreach (ModuleInfo mi in _commands.Modules.OrderBy(x => x.Name))
+                foreach (ModuleInfo mi in _commandService.Modules.OrderBy(x => x.Name))
                     if (!mi.IsSubmodule)
                         if (mi.Name != "Help")
                         {
                             bool ok = true;
                             foreach (PreconditionAttribute precondition in mi.Preconditions)
-                                if (!(await precondition.CheckPermissions(context, null, _services)).IsSuccess)
+                                if (!(await precondition.CheckPermissionsAsync(context, null, _services)).IsSuccess)
                                 {
                                     ok = false;
                                     break;
@@ -188,7 +189,7 @@ namespace DiscordNet.Handlers
                                 {
                                     object o = cmds[i];
                                     foreach (PreconditionAttribute precondition in ((o as CommandInfo)?.Preconditions ?? (o as ModuleInfo)?.Preconditions))
-                                        if (!(await precondition.CheckPermissions(context, o as CommandInfo, _services)).IsSuccess)
+                                        if (!(await precondition.CheckPermissionsAsync(context, o as CommandInfo, _services)).IsSuccess)
                                             cmds.Remove(o);
                                 }
                                 if (cmds.Count != 0)
@@ -226,7 +227,7 @@ namespace DiscordNet.Handlers
             }
             else
             {
-                SearchResult sr = _commands.Search(context, command);
+                SearchResult sr = _commandService.Search(context, command);
                 if (sr.IsSuccess)
                 {
                     Nullable<CommandMatch> cmd = null;

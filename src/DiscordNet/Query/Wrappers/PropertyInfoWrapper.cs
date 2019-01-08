@@ -2,10 +2,12 @@
 
 namespace DiscordNet.Query.Wrappers
 {
-    public class PropertyInfoWrapper
+    public class PropertyInfoWrapper : BaseInfoWrapper
     {
         public PropertyInfo Property { get; private set; }
         public TypeInfoWrapper Parent { get; private set; }
+        public string Namespace { get { return Parent.Namespace; } }
+
         public PropertyInfoWrapper(TypeInfoWrapper parent, PropertyInfo property)
         {
             Parent = parent;

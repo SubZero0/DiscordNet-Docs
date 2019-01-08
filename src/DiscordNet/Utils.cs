@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 
 namespace DiscordNet
 {
@@ -21,18 +20,18 @@ namespace DiscordNet
                 typeName = typeName.Substring(0, idx);
                 var generics = type.GetGenericArguments();
                 if (generics.Any())
-                    typeGeneric = $"<{String.Join(", ", generics.Select(x => BuildType(x)))}>";
+                    typeGeneric = string.Join(", ", generics.Select(x => BuildType(x)));
             }
             return GetTypeName(type, typeName, typeGeneric);
         }
 
         private static string GetTypeName(Type type, string name, string generic)
         {
-            if (type.IsInstanceOfType(typeof(Nullable<>)))
+            if (Nullable.GetUnderlyingType(type) != null)
                 return $"{generic}?";
             if (type.IsByRef)
                 return BuildType(type.GetElementType());
-            return Aliases.ContainsKey(type) ? Aliases[type] : $"{name}{generic}";
+            return Aliases.ContainsKey(type) ? Aliases[type] : $"{name}{(string.IsNullOrEmpty(generic) ? "" : $"<{generic}>")}";
         }
 
         private static readonly Dictionary<Type, string> Aliases = new Dictionary<Type, string>()

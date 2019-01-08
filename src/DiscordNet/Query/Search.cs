@@ -17,9 +17,9 @@ namespace DiscordNet.Query
             _cache = cache;
         }
 
-        public SearchResult<object> Run()
+        public SearchResult<BaseInfoWrapper> Run()
         {
-            List<object> found = new List<object>();
+            List<BaseInfoWrapper> found = new List<BaseInfoWrapper>();
             bool searchText = _result.Search == SearchType.ALL || _result.Search == SearchType.JUST_TEXT;
             if (_result.SearchTypes)
                 found.AddRange(_cache.SearchTypes(_result.Text, !searchText));
@@ -30,13 +30,13 @@ namespace DiscordNet.Query
             if (_result.SearchEvents)
                 found.AddRange(_cache.SearchEvents(_result.Text, !searchText));
             found = NamespaceFilter(found, _result.Search == SearchType.NONE || _result.Search == SearchType.JUST_TEXT);
-            return new SearchResult<object>(found);
+            return new SearchResult<BaseInfoWrapper>(found);
         }
 
-        private List<object> NamespaceFilter(List<object> oldList, bool exactName = true)
+        private List<BaseInfoWrapper> NamespaceFilter(List<BaseInfoWrapper> oldList, bool exactName = true)
         {
-            List<object> list = new List<object>();
-            foreach (object o in oldList)
+            List<BaseInfoWrapper> list = new List<BaseInfoWrapper>();
+            foreach (var o in oldList)
             {
                 if (o is TypeInfoWrapper type && !type.TypeInfo.Namespace.StartsWith("Discord.API") && CompareNamespaces(type.TypeInfo.Namespace))
                     list.Add(o);

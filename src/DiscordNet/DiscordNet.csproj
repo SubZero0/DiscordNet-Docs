@@ -1,30 +1,29 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp1.1</TargetFramework>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
     <DebugType>portable</DebugType>
     <AssemblyName>DiscordNet</AssemblyName>
     <OutputType>Exe</OutputType>
     <PackageId>DiscordNet</PackageId>
     <PackageTargetFallback>$(PackageTargetFallback);dnxcore50</PackageTargetFallback>
-    <RuntimeFrameworkVersion>1.1.1</RuntimeFrameworkVersion>
+    <RuntimeFrameworkVersion>2.0.5</RuntimeFrameworkVersion>
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
     <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
     <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Discord.Addons.Paginator" Version="1.0.23-dev" />
-    <PackageReference Include="Discord.Net.Commands" Version="2.0.0-alpha-build-00823" />
-    <PackageReference Include="Discord.Net.Core" Version="2.0.0-alpha-build-00823" />
-    <PackageReference Include="Discord.Net.Rest" Version="2.0.0-alpha-build-00823" />
-    <PackageReference Include="Discord.Net.Rpc" Version="2.0.0-alpha-build-00823" />
-    <PackageReference Include="Discord.Net.Webhook" Version="2.0.0-alpha-build-00823" />
-    <PackageReference Include="Discord.Net.WebSocket" Version="2.0.0-alpha-build-00823" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="2.1.0-beta1-61220-03" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="2.1.0-beta1-61220-03" />
-    <PackageReference Include="Microsoft.CodeAnalysis.Scripting.Common" Version="2.1.0-beta1-61220-03" />
-    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="1.1.1" />
+    <PackageReference Include="Discord.Addons.Paginator" Version="1.0.27-dev" />
+    <PackageReference Include="Discord.Net.Commands" Version="2.0.1" />
+    <PackageReference Include="Discord.Net.Core" Version="2.0.1" />
+    <PackageReference Include="Discord.Net.Rest" Version="2.0.1" />
+    <PackageReference Include="Discord.Net.Webhook" Version="2.0.1" />
+    <PackageReference Include="Discord.Net.WebSocket" Version="2.0.1" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="2.6.1" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="2.6.1" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Scripting.Common" Version="2.6.1" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="2.0.0" />
   </ItemGroup>
 
 </Project>
