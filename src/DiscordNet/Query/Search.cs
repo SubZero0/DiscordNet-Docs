@@ -11,6 +11,7 @@ namespace DiscordNet.Query
     {
         private InterpreterResult _result;
         private Cache _cache;
+
         public Search(InterpreterResult result, Cache cache)
         {
             _result = result;
@@ -50,7 +51,8 @@ namespace DiscordNet.Query
             return list;
         }
 
-        private bool CompareNamespaces(TypeInfo toCompare) => CompareNamespaces($"{toCompare.Namespace}.{toCompare.Name}");
+        private bool CompareNamespaces(TypeInfo toCompare)
+            => CompareNamespaces($"{toCompare.Namespace}.{toCompare.Name}");
         private bool CompareNamespaces(string toCompare)
         {
             if (_result.Namespace == null)

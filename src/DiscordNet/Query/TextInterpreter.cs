@@ -7,8 +7,8 @@ namespace DiscordNet.Query
     public class TextInterpreter
     {
         private static readonly Regex rgx = new Regex("[^0-9a-z_ ]", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.ECMAScript);
-
         private string _text;
+
         public TextInterpreter(string text)
         {
             _text = $" {text} ";

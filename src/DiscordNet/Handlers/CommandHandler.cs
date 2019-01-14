@@ -1,5 +1,4 @@
 ﻿using Discord;
-using Discord.Addons.Paginator;
 using Discord.Commands;
 using Discord.WebSocket;
 using DiscordNet.Controllers;
@@ -7,6 +6,7 @@ using DiscordNet.EmbedExtension;
 using DiscordNet.Modules.Addons;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
+using Paginator;
 using System;
 using System.Linq;
 using System.Reflection;
@@ -20,10 +20,10 @@ namespace DiscordNet.Handlers
         private CommandService _commandService;
         private DiscordSocketClient _client;
         private IServiceProvider _services;
-        private MainHandler _mainHandler;
-        private MemoryCache cache = new MemoryCache(new MemoryCacheOptions { ExpirationScanFrequency = TimeSpan.FromMinutes(3) });
+        private MainController _mainHandler;
+        private MemoryCache _cache = new MemoryCache(new MemoryCacheOptions { ExpirationScanFrequency = TimeSpan.FromMinutes(3) });
 
-        public async Task InitializeAsync(MainHandler MainHandler, IServiceProvider services)
+        public async Task InitializeAsync(MainController MainHandler, IServiceProvider services)
         {
             _mainHandler = MainHandler;
             _client = services.GetService<DiscordSocketClient>();
@@ -58,8 +58,7 @@ namespace DiscordNet.Handlers
                 ulong? id;
                 if ((id = GetOurMessageIdFromCache(before.Id)) != null)
                 {
-                    var botMessage = await channel.GetMessageAsync(id.Value) as IUserMessage;
-                    if (botMessage == null)
+                    if (!(await channel.GetMessageAsync(id.Value) is IUserMessage botMessage))
                         return;
                     int argPos = 0;
                     if (!afterSocket.HasMentionPrefix(_client.CurrentUser, ref argPos)) return;
@@ -67,7 +66,7 @@ namespace DiscordNet.Handlers
 
                     if (reply.Item1 == null && reply.Item2 == null && reply.Item3 == null)
                         return;
-                    var pagination = _services.GetService<PaginationService>();
+                    var pagination = _services.GetService<PaginatorService>();
                     var isPaginatedMessage = pagination.IsPaginatedMessage(id.Value);
                     if (reply.Item3 != null)
                     {
@@ -110,7 +109,7 @@ namespace DiscordNet.Handlers
                 return;
             IUserMessage message;
             if (reply.Item3 != null)
-                message = await (_services.GetService<PaginationService>()).SendPaginatedMessageAsync(msg.Channel, reply.Item3);
+                message = await (_services.GetService<PaginatorService>()).SendPaginatedMessageAsync(msg.Channel, reply.Item3);
             else
                 message = await msg.Channel.SendMessageAsync(reply.Item1, embed: reply.Item2?.Build());
             AddCache(msg.Id, message.Id);
@@ -135,7 +134,7 @@ namespace DiscordNet.Handlers
                         var tuple = await _mainHandler.QueryHandler.RunAsync(message);
                         if (tuple.Item2 is PaginatorBuilder pag)
                         {
-                            var paginated = new PaginatedMessage(pag.Pages, "Results", user: msg.Author, options: new AppearanceOptions { Timeout = TimeSpan.FromMinutes(10) });
+                            var paginated = new PaginatedMessage(pag.Pages, PaginatedMessageActions.Simplified, "Results", user: msg.Author, options: new AppearanceOptions { TimeoutAfterLastAction = TimeSpan.FromMinutes(3) });
                             return (null, null, paginated);
                         }
                         else
@@ -152,16 +151,10 @@ namespace DiscordNet.Handlers
         }
 
         public void AddCache(ulong userMessageId, ulong ourMessageId)
-        {
-            cache.Set(userMessageId, ourMessageId, new MemoryCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10) });
-        }
+            => _cache.Set(userMessageId, ourMessageId, new MemoryCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10) });
 
         public ulong? GetOurMessageIdFromCache(ulong messageId)
-        {
-            if (cache.TryGetValue<ulong>(messageId, out ulong id))
-                return id;
-            return null;
-        }
+            => _cache.TryGetValue<ulong>(messageId, out ulong id) ? (ulong?)id : null;
 
         public async Task<EmbedBuilder> HelpEmbedBuilderAsync(ICommandContext context, string command = null)
         {
@@ -195,7 +188,7 @@ namespace DiscordNet.Handlers
                                 if (cmds.Count != 0)
                                 {
                                     var list = cmds.Select(x => $"{((x as CommandInfo)?.Name ?? (x as ModuleInfo)?.Name)}").OrderBy(x => x);
-                                    sb.AppendLine($"**{mi.Name}:** {String.Join(", ", list)}");
+                                    sb.AppendLine($"**{mi.Name}:** {string.Join(", ", list)}");
                                 }
                             }
                         }
@@ -230,7 +223,7 @@ namespace DiscordNet.Handlers
                 SearchResult sr = _commandService.Search(context, command);
                 if (sr.IsSuccess)
                 {
-                    Nullable<CommandMatch> cmd = null;
+                    CommandMatch? cmd = null;
                     if (sr.Commands.Count == 1)
                         cmd = sr.Commands.First();
                     else
@@ -252,13 +245,13 @@ namespace DiscordNet.Handlers
                         eb.Author.Name = $"Help: {cmd.Value.Command.Aliases.First()}";
                         sb.Append($"Usage: {_mainHandler.Prefix}{cmd.Value.Command.Aliases.First()}");
                         if (cmd.Value.Command.Parameters.Count != 0)
-                            sb.Append($" [{String.Join("] [", cmd.Value.Command.Parameters.Select(x => x.Name))}]");
-                        if (!String.IsNullOrEmpty(cmd.Value.Command.Summary))
+                            sb.Append($" [{string.Join("] [", cmd.Value.Command.Parameters.Select(x => x.Name))}]");
+                        if (!string.IsNullOrEmpty(cmd.Value.Command.Summary))
                             sb.Append($"\nSummary: {cmd.Value.Command.Summary}");
-                        if (!String.IsNullOrEmpty(cmd.Value.Command.Remarks))
+                        if (!string.IsNullOrEmpty(cmd.Value.Command.Remarks))
                             sb.Append($"\nRemarks: {cmd.Value.Command.Remarks}");
                         if (cmd.Value.Command.Aliases.Count != 1)
-                            sb.Append($"\nAliases: {String.Join(", ", cmd.Value.Command.Aliases.Where(x => x != cmd.Value.Command.Aliases.First()))}");
+                            sb.Append($"\nAliases: {string.Join(", ", cmd.Value.Command.Aliases.Where(x => x != cmd.Value.Command.Aliases.First()))}");
                         eb.Description = sb.ToString();
                     }
                     else

@@ -66,9 +66,7 @@ namespace DiscordNet.Query
         }
 
         private string EventToDocs(EventInfoWrapper ei)
-        {
-            return $"#{ei.Parent.TypeInfo.Namespace.Replace('.', '_')}_{ei.Parent.TypeInfo.Name}_{ei.Event.Name}";
-        }
+            => $"#{ei.Parent.TypeInfo.Namespace.Replace('.', '_')}_{ei.Parent.TypeInfo.Name}_{ei.Event.Name}";
 
         private string BuildEvent(EventInfoWrapper ev)
         {

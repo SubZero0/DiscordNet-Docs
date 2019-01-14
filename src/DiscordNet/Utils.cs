@@ -7,9 +7,7 @@ namespace DiscordNet
     public static class Utils
     {
         public static IEnumerable<T> RandomShuffle<T>(this IEnumerable<T> source)
-        {
-            return source.Select(t => new {Index = Guid.NewGuid(), Value = t}).OrderBy(p => p.Index).Select(p => p.Value);
-        }
+            => source.Select(t => new {Index = Guid.NewGuid(), Value = t}).OrderBy(p => p.Index).Select(p => p.Value);
 
         public static string BuildType(Type type)
         {

@@ -114,11 +114,7 @@ namespace DiscordNet.Query
         }
 
         private string GetParameterDefaultValue(ParameterInfo pi)
-        {
-            if (pi.HasDefaultValue)
-                return $" = {GetDefaultValueAsString(pi.DefaultValue)}";
-            return "";
-        }
+            => pi.HasDefaultValue ? $" = {GetDefaultValueAsString(pi.DefaultValue)}" : "";
 
         private string GetDefaultValueAsString(object obj)
         {

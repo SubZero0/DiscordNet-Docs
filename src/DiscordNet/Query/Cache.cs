@@ -9,93 +9,65 @@ using System.Runtime.CompilerServices;
 
 namespace DiscordNet.Query
 {
-    public class CacheBag
-    {
-        public ConcurrentBag<MethodInfo> Methods;
-        public ConcurrentBag<PropertyInfo> Properties;
-        public ConcurrentBag<EventInfo> Events;
-        public CacheBag()
-        {
-            Methods = new ConcurrentBag<MethodInfo>();
-            Properties = new ConcurrentBag<PropertyInfo>();
-            Events = new ConcurrentBag<EventInfo>();
-        }
-        public CacheBag(CacheBag cb)
-        {
-            Methods = new ConcurrentBag<MethodInfo>(cb.Methods);
-            Properties = new ConcurrentBag<PropertyInfo>(cb.Properties);
-            Events = new ConcurrentBag<EventInfo>(cb.Events);
-        }
-    }
     public class Cache
     {
-        private ConcurrentDictionary<TypeInfoWrapper, CacheBag> allTypes;
-        private ConcurrentDictionary<TypeInfoWrapper, ConcurrentBag<MethodInfo>> extensions;
-        private int methodCount, propertyCount, extensionMethods, eventCount;
-        private bool ready;
+        private ConcurrentDictionary<TypeInfoWrapper, CacheBag> _allTypes;
+        private ConcurrentDictionary<TypeInfoWrapper, ConcurrentBag<MethodInfo>> _extensions;
+        private int _methodCount, _propertyCount, _extensionMethods, _eventCount;
+        private bool _ready;
+
         public Cache()
         {
-            allTypes = new ConcurrentDictionary<TypeInfoWrapper, CacheBag>();
-            extensions = new ConcurrentDictionary<TypeInfoWrapper, ConcurrentBag<MethodInfo>>();
-            ready = false;
-            methodCount = propertyCount = extensionMethods = eventCount = 0;
+            _allTypes = new ConcurrentDictionary<TypeInfoWrapper, CacheBag>();
+            _extensions = new ConcurrentDictionary<TypeInfoWrapper, ConcurrentBag<MethodInfo>>();
+            _ready = false;
+            _methodCount = _propertyCount = _extensionMethods = _eventCount = 0;
         }
 
         public void Initialize()
         {
-            methodCount = propertyCount = 0;
-            ready = false;
+            _methodCount = _propertyCount = _extensionMethods = _eventCount = 0;
+            _ready = false;
             Populate();
-            ready = true;
-            methodCount = allTypes.Sum(x => x.Value.Methods.Count);
-            propertyCount = allTypes.Sum(x => x.Value.Properties.Count);
-            extensionMethods = extensions.Sum(x => x.Value.Count);
-            eventCount = allTypes.Sum(x => x.Value.Events.Count);
+            _ready = true;
+            _methodCount = _allTypes.Sum(x => x.Value.Methods.Count);
+            _propertyCount = _allTypes.Sum(x => x.Value.Properties.Count);
+            _extensionMethods = _extensions.Sum(x => x.Value.Count);
+            _eventCount = _allTypes.Sum(x => x.Value.Events.Count);
         }
 
         public int GetTypeCount()
-        {
-            return allTypes.Count;
-        }
+            => _allTypes.Count;
 
         public int GetMethodCount()
-        {
-            return methodCount;
-        }
+            => _methodCount;
 
         public int GetPropertyCount()
-        {
-            return propertyCount;
-        }
+            => _propertyCount;
 
         public int GetEventCount()
-        {
-            return eventCount;
-        }
+            => _eventCount;
 
         public int GetExtensionTypesCount()
-        {
-            return extensions.Count;
-        }
+            => _extensions.Count;
 
         public int GetExtensioMethodsCount()
-        {
-            return extensionMethods;
-        }
+            => _extensionMethods;
 
         public CacheBag GetCacheBag(TypeInfoWrapper type)
         {
-            if (!allTypes.ContainsKey(type))
+            if (!_allTypes.ContainsKey(type))
                 return null;
-            CacheBag cb = new CacheBag(allTypes[type]);
-            foreach (ConcurrentBag<MethodInfo> bag in extensions.Values)
+            CacheBag cb = new CacheBag(_allTypes[type]);
+            foreach (ConcurrentBag<MethodInfo> bag in _extensions.Values)
                 foreach (MethodInfo mi in bag)
                     if (CheckTypeAndInterfaces(type, mi.GetParameters().FirstOrDefault()?.ParameterType.GetTypeInfo()))
                         cb.Methods.Add(mi);
             return cb;
         }
 
-        private bool CheckTypeAndInterfaces(TypeInfoWrapper toBeChecked, TypeInfo toSearch) => CheckTypeAndInterfaces(toBeChecked.TypeInfo, toSearch);
+        private bool CheckTypeAndInterfaces(TypeInfoWrapper toBeChecked, TypeInfo toSearch)
+            => CheckTypeAndInterfaces(toBeChecked.TypeInfo, toSearch);
         private bool CheckTypeAndInterfaces(TypeInfo toBeChecked, TypeInfo toSearch)
         {
             if (toSearch == null || toBeChecked == null)
@@ -109,14 +81,12 @@ namespace DiscordNet.Query
         }
 
         public List<TypeInfoWrapper> SearchTypes(string name, bool exactName = true)
-        {
-            return allTypes.Keys.Where(x => (exactName ? x.DisplayName.ToLower() == name.ToLower() : SearchFunction(name, x.DisplayName.ToLower()))).ToList();
-        }
+            => _allTypes.Keys.Where(x => (exactName ? x.DisplayName.ToLower() == name.ToLower() : SearchFunction(name, x.DisplayName.ToLower()))).ToList();
 
         public List<MethodInfoWrapper> SearchMethods(string name, bool exactName = true)
         {
             List<MethodInfoWrapper> result = new List<MethodInfoWrapper>();
-            foreach(TypeInfoWrapper type in allTypes.Keys)
+            foreach(TypeInfoWrapper type in _allTypes.Keys)
                 result.AddRange(GetCacheBag(type).Methods.Where(x => (exactName ? x.Name.ToLower() == name.ToLower() : SearchFunction(name, x.Name.ToLower()))).Select(x => new MethodInfoWrapper(type, x)));
             return result;
         }
@@ -124,7 +94,7 @@ namespace DiscordNet.Query
         public List<PropertyInfoWrapper> SearchProperties(string name, bool exactName = true)
         {
             List<PropertyInfoWrapper> result = new List<PropertyInfoWrapper>();
-            foreach (TypeInfoWrapper type in allTypes.Keys)
+            foreach (TypeInfoWrapper type in _allTypes.Keys)
                 result.AddRange(GetCacheBag(type).Properties.Where(x => (exactName ? x.Name.ToLower() == name.ToLower() : SearchFunction(name, x.Name.ToLower()))).Select(x => new PropertyInfoWrapper(type, x)));
             return result;
         }
@@ -132,7 +102,7 @@ namespace DiscordNet.Query
         public List<EventInfoWrapper> SearchEvents(string name, bool exactName = true)
         {
             List<EventInfoWrapper> result = new List<EventInfoWrapper>();
-            foreach (TypeInfoWrapper type in allTypes.Keys)
+            foreach (TypeInfoWrapper type in _allTypes.Keys)
                 result.AddRange(GetCacheBag(type).Events.Where(x => (exactName ? x.Name.ToLower() == name.ToLower() : SearchFunction(name, x.Name.ToLower()))).Select(x => new EventInfoWrapper(type, x)));
             return result;
         }
@@ -146,9 +116,7 @@ namespace DiscordNet.Query
         }
 
         private void ForceReference()
-        {
-            new DiscordWebhookClient(null);
-        }
+            => new DiscordWebhookClient(null);
 
         private void Populate()
         {
@@ -164,21 +132,21 @@ namespace DiscordNet.Query
                 type = type.GetGenericTypeDefinition();
             if (!CheckNamespace(type.Namespace))
                 return;
-            if (allTypes.Keys.FirstOrDefault(x => x.TypeInfo == type.GetTypeInfo()) == null)
+            if (_allTypes.Keys.FirstOrDefault(x => x.TypeInfo == type.GetTypeInfo()) == null)
             {
                 TypeInfoWrapper tiw = new TypeInfoWrapper(type);
                 CacheBag cb = new CacheBag();
-                allTypes[tiw] = cb;
+                _allTypes[tiw] = cb;
                 foreach (MethodInfo mi in type.GetRuntimeMethods())
                 {
                     if (CheckNamespace(mi.DeclaringType.Namespace) && (mi.IsPublic || mi.IsFamily) && !mi.IsSpecialName && !cb.Methods.Contains(mi))
                         cb.Methods.Add(mi);
                     if (mi.IsDefined(typeof(ExtensionAttribute), false) && mi.IsStatic && mi.IsPublic)
                     {
-                        if (extensions.Keys.FirstOrDefault(x => x.TypeInfo == type.GetTypeInfo()) == null)
-                            extensions[tiw] = new ConcurrentBag<MethodInfo>(new MethodInfo[] { mi });
+                        if (_extensions.Keys.FirstOrDefault(x => x.TypeInfo == type.GetTypeInfo()) == null)
+                            _extensions[tiw] = new ConcurrentBag<MethodInfo>(new MethodInfo[] { mi });
                         else
-                            extensions[tiw].Add(mi);
+                            _extensions[tiw].Add(mi);
                     }
                 }
                 var rt = type.GetRuntimeProperties();
@@ -198,27 +166,23 @@ namespace DiscordNet.Query
             if (CheckNamespace(_interface.Namespace))
                 LoadType(_interface);
             foreach (MethodInfo mi in _interface.GetRuntimeMethods())
-                if (CheckNamespace(mi.DeclaringType.Namespace) && (mi.IsPublic || mi.IsFamily) && !mi.IsSpecialName && !allTypes[parent].Methods.Contains(mi))
-                    if (!allTypes[parent].Methods.Contains(mi))
-                        allTypes[parent].Methods.Add(mi);
+                if (CheckNamespace(mi.DeclaringType.Namespace) && (mi.IsPublic || mi.IsFamily) && !mi.IsSpecialName && !_allTypes[parent].Methods.Contains(mi))
+                    if (!_allTypes[parent].Methods.Contains(mi))
+                        _allTypes[parent].Methods.Add(mi);
             foreach (PropertyInfo pi in _interface.GetRuntimeProperties())
-                if (!allTypes[parent].Properties.Contains(pi) && !allTypes[parent].Properties.Any(x => x.Name == pi.Name))
-                    allTypes[parent].Properties.Add(pi);
+                if (!_allTypes[parent].Properties.Contains(pi) && !_allTypes[parent].Properties.Any(x => x.Name == pi.Name))
+                    _allTypes[parent].Properties.Add(pi);
             foreach (EventInfo ei in _interface.GetRuntimeEvents())
-                if (!allTypes[parent].Events.Contains(ei))
-                    allTypes[parent].Events.Add(ei);
+                if (!_allTypes[parent].Events.Contains(ei))
+                    _allTypes[parent].Events.Add(ei);
             foreach (Type type in _interface.GetInterfaces())
                 LoadInterface(type, parent);
         }
 
         public bool IsReady()
-        {
-            return ready;
-        }
+            => _ready;
 
         private bool CheckNamespace(string ns)
-        {
-            return ns.StartsWith("Discord") && !ns.StartsWith("Discord.Net");
-        }
+            => ns.StartsWith("Discord") && !ns.StartsWith("Discord.Net");
     }
 }

@@ -72,10 +72,6 @@ namespace DiscordNet.Query
         }
 
         private string PropertyToDocs(PropertyInfoWrapper pi)
-        {
-            if (IsInherited(pi))
-                return "";
-            return $"#{pi.Parent.TypeInfo.Namespace.Replace('.', '_')}_{pi.Parent.TypeInfo.Name}_{pi.Property.Name}";
-        }
+            => IsInherited(pi) ? "" : $"#{pi.Parent.TypeInfo.Namespace.Replace('.', '_')}_{pi.Parent.TypeInfo.Name}_{pi.Property.Name}";
     }
 }

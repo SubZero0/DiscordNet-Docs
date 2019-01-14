@@ -7,17 +7,13 @@ namespace DiscordNet.Handlers
 {
     public class QueryHandler
     {
-        public Cache Cache { get; private set; }
+        public Cache Cache { get; }
 
         public QueryHandler()
-        {
-            Cache = new Cache();
-        }
+            => Cache = new Cache();
 
         public void Initialize()
-        {
-            Cache.Initialize();
-        }
+            => Cache.Initialize();
 
         public async Task<(string, EmbedBuilder)> RunAsync(string text)
         {
@@ -44,8 +40,6 @@ namespace DiscordNet.Handlers
         }
 
         public bool IsReady()
-        {
-            return Cache.IsReady();
-        }
+            => Cache.IsReady();
     }
 }

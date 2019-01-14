@@ -12,18 +12,18 @@ namespace DiscordNet.Github
 {
     public class GithubRest
     {
-        private const string ApiUrl = "https://api.github.com";
-        private const string AcceptHeader = "application/vnd.github.v3+json";
-        private const string UserAgentHeader = "Discord.Net Docs Bot/1.0";
-        private const string AuthorizationHeader = "token ...";
+        private const string _apiUrl = "https://api.github.com";
+        private const string _acceptHeader = "application/vnd.github.v3+json";
+        private const string _userAgentHeader = "Discord.Net Docs Bot/1.0";
+        internal static string AuthorizationHeader;
 
         private static async Task<JObject> SendRequestAsync(HttpMethod method, string endpoint, string extra = null)
         {
             using (var http = new HttpClient())
             {
-                var request = new HttpRequestMessage(method, $"{ApiUrl}{endpoint}{extra}");
-                request.Headers.Add("Accept", AcceptHeader);
-                request.Headers.Add("User-Agent", UserAgentHeader);
+                var request = new HttpRequestMessage(method, $"{_apiUrl}{endpoint}{extra}");
+                request.Headers.Add("Accept", _acceptHeader);
+                request.Headers.Add("User-Agent", _userAgentHeader);
                 request.Headers.Add("Authorization", AuthorizationHeader);
                 var response = await http.SendAsync(request);
                 if (response.IsSuccessStatusCode)
@@ -144,17 +144,6 @@ namespace DiscordNet.Github
                 }
             }
             return await GetTypeUrlAsync(property.Parent);
-        }
-    }
-
-    public class GitSearchResult
-    {
-        public string Name { get; protected internal set; }
-        public string HtmlUrl { get; protected internal set; }
-
-        public override string ToString()
-        {
-            return $"{Name}: {HtmlUrl}";
         }
     }
 }

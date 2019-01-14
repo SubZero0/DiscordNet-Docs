@@ -89,9 +89,7 @@ namespace DiscordNet.Query
 
         //Generic types will return like Type`1 and the docs change to Type-1
         private string SanitizeDocsUrl(string text)
-        {
-            return text.Replace('`', '-');
-        }
+            => text.Replace('`', '-');
 
         public bool IsInherited(object o)
         {
@@ -103,9 +101,7 @@ namespace DiscordNet.Query
         }
 
         private List<string> GetPaths(IEnumerable<object> list)
-        {
-            return list.Select(x => GetPath(x)).ToList();
-        }
+            => list.Select(x => GetPath(x)).ToList();
 
         public string GetPath(object o, bool withInheritanceMarkup = true)
         {
@@ -202,9 +198,7 @@ namespace DiscordNet.Query
         }
 
         private string FormatGithubUrl(string url)
-        {
-            return $"[{url.Substring(url.LastIndexOf('/') + 1)}]({url})";
-        }
+            => $"[{url.Substring(url.LastIndexOf('/') + 1)}]({url})";
 
         private string FormatDocsUrl(string url)
         {

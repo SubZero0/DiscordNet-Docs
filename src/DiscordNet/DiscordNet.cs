@@ -1,10 +1,11 @@
 ﻿using Discord;
-using Discord.Addons.Paginator;
 using Discord.WebSocket;
 using DiscordNet.Controllers;
 using DiscordNet.Github;
 using Microsoft.Extensions.DependencyInjection;
+using Paginator;
 using System;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -15,12 +16,17 @@ namespace DiscordNet
     public class DiscordNet
     {
         private DiscordSocketClient _client;
-        private MainHandler _mainHandler;
+        private MainController _mainController;
 
         private Regex _githubRegex = new Regex("(?<=\\s|^)##(?<number>[0-9]{1,4})(?=\\s|$)", RegexOptions.Compiled | RegexOptions.ECMAScript);
 
         public async Task RunAsync()
         {
+            string discordToken = await File.ReadAllTextAsync("Tokens/Discord.txt");
+            string githubToken = await File.ReadAllTextAsync("Tokens/Github.txt");
+
+            GithubRest.AuthorizationHeader = githubToken;
+
             _client = new DiscordSocketClient(new DiscordSocketConfig()
             {
                 LogLevel = LogSeverity.Info,
@@ -82,12 +88,12 @@ namespace DiscordNet
 
             var services = new ServiceCollection();
             services.AddSingleton(_client);
-            services.AddPaginator(_client);
+            services.AddSingleton(new PaginatorService(_client));
 
-            _mainHandler = new MainHandler(_client, services.BuildServiceProvider());
-            await _mainHandler.InitializeEarlyAsync();
+            _mainController = new MainController(_client, services.BuildServiceProvider());
+            await _mainController.InitializeEarlyAsync();
 
-            await _client.LoginAsync(TokenType.Bot, "...");
+            await _client.LoginAsync(TokenType.Bot, discordToken);
             await _client.StartAsync();
             await Task.Delay(-1);
         }

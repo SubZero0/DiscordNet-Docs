@@ -1,5 +1,4 @@
 ﻿using Discord;
-using Discord.Addons.Paginator;
 using DiscordNet.EmbedExtension;
 using DiscordNet.Query.Results;
 using DiscordNet.Query.Wrappers;
@@ -66,7 +65,7 @@ namespace DiscordNet.Query
                     eb.AddField(x =>
                     {
                         x.Name = (i == 0 ? $"Also found in ({list.Count()}/{singleList.Count() - 1}):" : "​");
-                        x.Value = String.Join("\n", list.Skip(3 * i).Take(3).Select(y => GetParent(y)));
+                        x.Value = string.Join("\n", list.Skip(3 * i).Take(3).Select(y => GetParent(y)));
                         x.IsInline = true;
                     });
             }
@@ -100,7 +99,7 @@ namespace DiscordNet.Query
         private IEnumerable<string> ToPages(IEnumerable<BaseInfoWrapper> list, int pages, int size)
         {
             for (int i = 0; i < pages; i++)
-                yield return String.Join("\n", GetPaths(list.Skip(i * size).Take(size)));
+                yield return string.Join("\n", GetPaths(list.Skip(i * size).Take(size)));
         }
     }
 }

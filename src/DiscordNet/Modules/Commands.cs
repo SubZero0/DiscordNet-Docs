@@ -27,8 +27,8 @@ namespace DiscordNet.Modules
         [Summary("Delete all the messages from this bot within the last X messages")]
         public async Task Clean(int messages = 30)
         {
-            if (messages > 50)
-                messages = 50;
+            if (messages > 100)
+                messages = 100;
             else if (messages < 2)
                 messages = 2;
             var msgs = await Context.Channel.GetMessagesAsync(messages).FlattenAsync();
@@ -39,19 +39,15 @@ namespace DiscordNet.Modules
 
         [Command("docs")]
         [Summary("Show the docs url")]
-        public async Task Docs()
-        {
-            await ReplyAsync($"Docs: {DocsUrlHandler.DocsBaseUrl}");
-        }
+        public Task Docs()
+            => ReplyAsync($"Docs: {DocsUrlHandler.DocsBaseUrl}");
 
         [Command("invite")]
         [Summary("Show the invite url")]
-        public async Task Invite()
-        {
-            await ReplyAsync($"Invite: https://discordapp.com/oauth2/authorize?client_id=274366085011079169&scope=bot");
-        }
+        public Task Invite()
+            => ReplyAsync($"Invite: https://discordapp.com/oauth2/authorize?client_id=274366085011079169&scope=bot");
 
-        [Command("guides")]
+        /*[Command("guides")]
         [Alias("guide")]
         [Summary("Show the url of a guide")]
         public async Task Guides([Remainder] string guide = null)
@@ -142,7 +138,7 @@ namespace DiscordNet.Modules
                 };
                 await ReplyAsync("", embed: eb.Build());
             }
-        }
+        }*/
 
         [Command("info")]
         [Summary("Show some information")]
@@ -173,17 +169,17 @@ namespace DiscordNet.Modules
             {
                 x.IsInline = true;
                 x.Name = "Docs";
-                x.Value = $"- Types: {Context.MainHandler.QueryHandler.Cache.GetTypeCount()}\n" +
-                          $"- Methods: {Context.MainHandler.QueryHandler.Cache.GetMethodCount()}\n" +
-                          $"- Properties: {Context.MainHandler.QueryHandler.Cache.GetPropertyCount()}";
+                x.Value = $"- Types: {Context.MainController.QueryHandler.Cache.GetTypeCount()}\n" +
+                          $"- Methods: {Context.MainController.QueryHandler.Cache.GetMethodCount()}\n" +
+                          $"- Properties: {Context.MainController.QueryHandler.Cache.GetPropertyCount()}";
             });
             eb.AddField(x =>
             {
                 x.IsInline = true;
                 x.Name = "​"; // <- zero-width space here
-                x.Value = $"- Events: {Context.MainHandler.QueryHandler.Cache.GetEventCount()}\n" +
-                          $"- Extension types: {Context.MainHandler.QueryHandler.Cache.GetExtensionTypesCount()}\n" +
-                          $"- Extension methods: {Context.MainHandler.QueryHandler.Cache.GetExtensioMethodsCount()}";
+                x.Value = $"- Events: {Context.MainController.QueryHandler.Cache.GetEventCount()}\n" +
+                          $"- Extension types: {Context.MainController.QueryHandler.Cache.GetExtensionTypesCount()}\n" +
+                          $"- Extension methods: {Context.MainController.QueryHandler.Cache.GetExtensioMethodsCount()}";
             });
             await ReplyAsync("", false, eb.Build());
         }
@@ -259,8 +255,6 @@ namespace DiscordNet.Modules
         [Command("help")]
         [Summary("Shows the help command")]
         public async Task Help([Remainder] string command = null)
-        {
-            await ReplyAsync("", embed: (await Context.MainHandler.CommandHandler.HelpEmbedBuilderAsync(Context, command)).Build());
-        }
+            => await ReplyAsync("", embed: (await Context.MainController.CommandHandler.HelpEmbedBuilderAsync(Context, command)).Build());
     }
 }
