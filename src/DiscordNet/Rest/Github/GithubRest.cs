@@ -12,19 +12,24 @@ namespace DiscordNet.Github
 {
     public class GithubRest
     {
-        private const string _apiUrl = "https://api.github.com";
-        private const string _acceptHeader = "application/vnd.github.v3+json";
-        private const string _userAgentHeader = "Discord.Net Docs Bot/1.0";
-        internal static string AuthorizationHeader;
+        private readonly string _apiUrl, _acceptHeader, _userAgentHeader, _authorizationHeader;
 
-        private static async Task<JObject> SendRequestAsync(HttpMethod method, string endpoint, string extra = null)
+        public GithubRest(string token)
+        {
+            _apiUrl = "https://api.github.com";
+            _acceptHeader = "application/vnd.github.v3+json";
+            _userAgentHeader = "Discord.Net Docs Bot/1.0";
+            _authorizationHeader = token;
+        }
+
+        private async Task<JObject> SendRequestAsync(HttpMethod method, string endpoint, string extra = null)
         {
             using (var http = new HttpClient())
             {
                 var request = new HttpRequestMessage(method, $"{_apiUrl}{endpoint}{extra}");
                 request.Headers.Add("Accept", _acceptHeader);
                 request.Headers.Add("User-Agent", _userAgentHeader);
-                request.Headers.Add("Authorization", AuthorizationHeader);
+                request.Headers.Add("Authorization", _authorizationHeader);
                 var response = await http.SendAsync(request);
                 if (response.IsSuccessStatusCode)
                     return JObject.Parse(await response.Content.ReadAsStringAsync());
@@ -32,13 +37,13 @@ namespace DiscordNet.Github
             }
         }
 
-        public static async Task<IEnumerable<string>> GetIssuesUrlsAsync(IEnumerable<string> numbers)
+        public async Task<IEnumerable<string>> GetIssuesUrlsAsync(IEnumerable<string> numbers)
         {
             var result = await Task.WhenAll(numbers.Select(x => SendRequestAsync(HttpMethod.Get, "/repos/RogueException/Discord.Net/issues/", x)));
             return result.Select(x => (string)x["html_url"]);
         }
 
-        public static async Task<List<GitSearchResult>> SearchAsync(string search, string filename = null)
+        public async Task<List<GitSearchResult>> SearchAsync(string search, string filename = null)
         {
             var extra = $"?q=repo:RogueException/Discord.Net+language:cs+in:file{(filename == null ? "" : $"+filename:{filename}")}+{search.Replace(' ', '+')}&per_page=100";
             var result = await SendRequestAsync(HttpMethod.Get, "/search/code", extra);
@@ -62,13 +67,13 @@ namespace DiscordNet.Github
             return list;
         }
 
-        public static async Task<string> GetTypeUrlAsync(TypeInfoWrapper type)
+        public async Task<string> GetTypeUrlAsync(TypeInfoWrapper type)
         {
             var search = await SearchAsync(type.Name, $"{type.Name}.cs");
             return search.FirstOrDefault(x => x.Name == $"{type.Name}.cs")?.HtmlUrl ?? search.FirstOrDefault()?.HtmlUrl ?? null; //null = Not found
         }
 
-        public static async Task<string> GetEventUrlAsync(EventInfoWrapper ev)
+        public async Task<string> GetEventUrlAsync(EventInfoWrapper ev)
         {
             var search = await SearchAsync(ev.Event.DeclaringType.Name, $"{ev.Event.DeclaringType.Name}.Events.cs");
             var result = search.FirstOrDefault(x => x.Name == $"{ev.Event.DeclaringType.Name}.Events.cs")?.HtmlUrl ?? search.FirstOrDefault()?.HtmlUrl;
@@ -94,7 +99,7 @@ namespace DiscordNet.Github
             return result ?? await GetTypeUrlAsync(ev.Parent);
         }
 
-        public static async Task<string> GetMethodUrlAsync(MethodInfoWrapper method)
+        public async Task<string> GetMethodUrlAsync(MethodInfoWrapper method)
         {
             var search = await SearchAsync(method.Method.Name, $"{method.Method.DeclaringType.Name}.cs");
             var result = search.FirstOrDefault(x => x.Name == $"{method.Method.DeclaringType.Name}.cs")?.HtmlUrl ?? search.FirstOrDefault()?.HtmlUrl;
@@ -120,7 +125,7 @@ namespace DiscordNet.Github
             return await GetTypeUrlAsync(method.Parent);
         }
 
-        public static async Task<string> GetPropertyUrlAsync(PropertyInfoWrapper property)
+        public async Task<string> GetPropertyUrlAsync(PropertyInfoWrapper property)
         {
             var search = await SearchAsync(property.Property.Name, $"{property.Property.DeclaringType.Name}.cs");
             var result = search.FirstOrDefault(x => x.Name == $"{property.Property.DeclaringType.Name}.cs")?.HtmlUrl ?? search.FirstOrDefault()?.HtmlUrl;

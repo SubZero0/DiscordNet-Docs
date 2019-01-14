@@ -1,5 +1,6 @@
 ﻿using Discord;
 using DiscordNet.EmbedExtension;
+using DiscordNet.Github;
 using DiscordNet.Query.Results;
 using DiscordNet.Query.Wrappers;
 using System;
@@ -14,11 +15,14 @@ namespace DiscordNet.Query
         private SearchResult<BaseInfoWrapper> _result;
         private Cache _cache;
         private bool _isList;
-        public ResultDisplay(SearchResult<BaseInfoWrapper> result, Cache cache, bool isList)
+        private GithubRest _githubRest;
+
+        public ResultDisplay(SearchResult<BaseInfoWrapper> result, Cache cache, bool isList, GithubRest githubRest)
         {
             _result = result;
             _cache = cache;
             _isList = isList;
+            _githubRest = githubRest;
         }
 
         public async Task<EmbedBuilder> RunAsync()

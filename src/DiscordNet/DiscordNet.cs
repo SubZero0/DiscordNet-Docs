@@ -25,7 +25,7 @@ namespace DiscordNet
             string discordToken = await File.ReadAllTextAsync("Tokens/Discord.txt");
             string githubToken = await File.ReadAllTextAsync("Tokens/Github.txt");
 
-            GithubRest.AuthorizationHeader = githubToken;
+            var githubRest = new GithubRest(githubToken);
 
             _client = new DiscordSocketClient(new DiscordSocketConfig()
             {
@@ -78,7 +78,7 @@ namespace DiscordNet
                         MatchCollection matches = _githubRegex.Matches(userMessage.Content);
                         if (matches.Count > 0)
                         {
-                            var urls = await GithubRest.GetIssuesUrlsAsync(matches.Take(3).Select(x => x.Groups["number"].Value));
+                            var urls = await githubRest.GetIssuesUrlsAsync(matches.Take(3).Select(x => x.Groups["number"].Value));
                             await userMessage.Channel.SendMessageAsync(string.Join("\n", urls));
                         }
                     }
@@ -89,6 +89,7 @@ namespace DiscordNet
             var services = new ServiceCollection();
             services.AddSingleton(_client);
             services.AddSingleton(new PaginatorService(_client));
+            services.AddSingleton(githubRest);
 
             _mainController = new MainController(_client, services.BuildServiceProvider());
             await _mainController.InitializeEarlyAsync();

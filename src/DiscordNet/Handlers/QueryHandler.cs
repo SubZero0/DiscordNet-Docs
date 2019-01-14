@@ -1,4 +1,5 @@
 ﻿using Discord;
+using DiscordNet.Github;
 using DiscordNet.Query;
 using DiscordNet.Query.Results;
 using System.Threading.Tasks;
@@ -8,9 +9,13 @@ namespace DiscordNet.Handlers
     public class QueryHandler
     {
         public Cache Cache { get; }
+        public GithubRest GithubRest { get; }
 
-        public QueryHandler()
-            => Cache = new Cache();
+        public QueryHandler(GithubRest githubRest)
+        {
+            Cache = new Cache();
+            GithubRest = githubRest;
+        }
 
         public void Initialize()
             => Cache.Initialize();
@@ -35,7 +40,7 @@ namespace DiscordNet.Handlers
             interpreterResult.Search = type;
             var searchResult = new Search(interpreterResult, Cache).Run();
             if (searchResult.Count != 0)
-                return await new ResultDisplay(searchResult, Cache, interpreterResult.IsList).RunAsync();
+                return await new ResultDisplay(searchResult, Cache, interpreterResult.IsList, GithubRest).RunAsync();
             return null;
         }
 

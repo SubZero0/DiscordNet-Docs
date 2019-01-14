@@ -37,7 +37,7 @@ namespace DiscordNet.Query
                 x.Name = "Docs:";
                 x.Value = FormatDocsUrl(eab.Url);
             });
-            var githubUrl = await GithubRest.GetMethodUrlAsync(first);
+            var githubUrl = await _githubRest.GetMethodUrlAsync(first);
             if (githubUrl != null)
             {
                 eb.AddField((x) =>

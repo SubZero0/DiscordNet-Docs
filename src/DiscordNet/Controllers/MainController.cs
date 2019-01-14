@@ -1,4 +1,5 @@
 ﻿using Discord.WebSocket;
+using DiscordNet.Github;
 using DiscordNet.Handlers;
 using System;
 using System.Threading.Tasks;
@@ -20,7 +21,7 @@ namespace DiscordNet.Controllers
             Client = client;
             Services = services;
             CommandHandler = new CommandHandler();
-            QueryHandler = new QueryHandler();
+            QueryHandler = new QueryHandler((GithubRest)services.GetService(typeof(GithubRest)));
         }
 
         public async Task InitializeEarlyAsync()
