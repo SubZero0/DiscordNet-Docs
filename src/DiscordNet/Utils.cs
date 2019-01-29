@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 
 namespace DiscordNet
 {
@@ -8,9 +9,38 @@ namespace DiscordNet
     {
         public static string ResolveHtml(string html)
         {
-            //TODO: Pass summary, replace \n's with spaces, replace </p>'s with \n's, strip tags, decode html
-            //ISSUE: <p></p> could be empty, check for \n on first char
-            return "";
+            string res = WebUtility.HtmlDecode(StripTags(html.Replace('\n', ' ').Replace("</p>", "\n")));
+            if (res[0] == '\n')
+                res = res.Substring(1);
+            return res;
+        }
+
+        public static string StripTags(string source)
+        {
+            char[] array = new char[source.Length];
+            int arrayIndex = 0;
+            bool inside = false;
+
+            for (int i = 0; i < source.Length; i++)
+            {
+                char let = source[i];
+                if (let == '<')
+                {
+                    inside = true;
+                    continue;
+                }
+                if (let == '>')
+                {
+                    inside = false;
+                    continue;
+                }
+                if (!inside)
+                {
+                    array[arrayIndex] = let;
+                    arrayIndex++;
+                }
+            }
+            return new string(array, 0, arrayIndex);
         }
 
         public static IEnumerable<T> RandomShuffle<T>(this IEnumerable<T> source)
