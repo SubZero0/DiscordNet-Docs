@@ -6,6 +6,13 @@ namespace DiscordNet
 {
     public static class Utils
     {
+        public static string ResolveHtml(string html)
+        {
+            //TODO: Pass summary, replace \n's with spaces, replace </p>'s with \n's, strip tags, decode html
+            //ISSUE: <p></p> could be empty, check for \n on first char
+            return "";
+        }
+
         public static IEnumerable<T> RandomShuffle<T>(this IEnumerable<T> source)
             => source.Select(t => new {Index = Guid.NewGuid(), Value = t}).OrderBy(p => p.Index).Select(p => p.Value);
 

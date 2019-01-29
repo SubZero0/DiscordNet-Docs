@@ -49,11 +49,11 @@ namespace DiscordNet
                 Task.Run(async () =>
                 {
                     CancellationTokenSource cts = new CancellationTokenSource();
-                    Func<Task> ctsTask = () =>
+                    Task ctsTask()
                     {
                         cts.Cancel();
                         return Task.CompletedTask;
-                    };
+                    }
 
                     _client.Connected += ctsTask;
                     await Task.Delay(30000, cts.Token);

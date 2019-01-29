@@ -39,13 +39,13 @@ namespace DiscordNet.Github
 
         public async Task<IEnumerable<string>> GetIssuesUrlsAsync(IEnumerable<string> numbers)
         {
-            var result = await Task.WhenAll(numbers.Select(x => SendRequestAsync(HttpMethod.Get, "/repos/RogueException/Discord.Net/issues/", x)));
+            var result = await Task.WhenAll(numbers.Select(x => SendRequestAsync(HttpMethod.Get, "/repos/discord-net/Discord.Net/issues/", x)));
             return result.Select(x => (string)x["html_url"]);
         }
 
         public async Task<List<GitSearchResult>> SearchAsync(string search, string filename = null)
         {
-            var extra = $"?q=repo:RogueException/Discord.Net+language:cs+in:file{(filename == null ? "" : $"+filename:{filename}")}+{search.Replace(' ', '+')}&per_page=100";
+            var extra = $"?q=repo:discord-net/Discord.Net+language:cs+in:file{(filename == null ? "" : $"+filename:{filename}")}+{search.Replace(' ', '+')}&per_page=100";
             var result = await SendRequestAsync(HttpMethod.Get, "/search/code", extra);
             var items = (JArray)result["items"];
             var list = new List<GitSearchResult>();
@@ -57,7 +57,7 @@ namespace DiscordNet.Github
                 int pages = (int)Math.Floor(totalCount / 100f);
                 for (int i = 2; i <= pages + 1; i++)
                 {
-                    extra = $"?q=repo:RogueException/Discord.Net+language:cs+in:file{(filename == null ? "" : $"+filename:{filename}")}+{search.Replace(' ', '+')}&per_page=100&page={i}";
+                    extra = $"?q=repo:discord-net/Discord.Net+language:cs+in:file{(filename == null ? "" : $"+filename:{filename}")}+{search.Replace(' ', '+')}&per_page=100&page={i}";
                     result = await SendRequestAsync(HttpMethod.Get, "/search/code", extra);
                     items = (JArray)result["items"];
                     foreach (var item in items)

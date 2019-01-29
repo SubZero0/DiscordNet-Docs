@@ -55,7 +55,7 @@ namespace DiscordNet.Modules
             string html;
             using (var httpClient = new HttpClient())
             {
-                var res = await httpClient.GetAsync("https://raw.githubusercontent.com/RogueException/Discord.Net/dev/docs/guides/toc.yml");
+                var res = await httpClient.GetAsync("https://raw.githubusercontent.com/discord-net/Discord.Net/dev/docs/guides/toc.yml");
                 if (!res.IsSuccessStatusCode)
                     throw new Exception($"An error occurred: {res.ReasonPhrase}");
                 html = await res.Content.ReadAsStringAsync();
