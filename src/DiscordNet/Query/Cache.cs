@@ -116,7 +116,7 @@ namespace DiscordNet.Query
         }
 
         private void ForceReference()
-            => new DiscordWebhookClient(null);
+            => new DiscordWebhookClient((Discord.IWebhook)null);
 
         private void Populate()
         {
