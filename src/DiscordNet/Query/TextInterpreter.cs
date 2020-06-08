@@ -1,5 +1,4 @@
-﻿using DiscordNet.Query.Results;
-using System;
+﻿using System;
 using System.Text.RegularExpressions;
 
 namespace DiscordNet.Query

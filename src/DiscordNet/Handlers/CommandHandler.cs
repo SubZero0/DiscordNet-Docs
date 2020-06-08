@@ -1,9 +1,6 @@
 ﻿using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using DiscordNet.Controllers;
-using DiscordNet.EmbedExtension;
-using DiscordNet.Modules.Addons;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Paginator;
@@ -13,7 +10,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DiscordNet.Handlers
+namespace DiscordNet
 {
     public class CommandHandler
     {
@@ -21,7 +18,7 @@ namespace DiscordNet.Handlers
         private DiscordSocketClient _client;
         private IServiceProvider _services;
         private MainController _mainHandler;
-        private MemoryCache _cache = new MemoryCache(new MemoryCacheOptions { ExpirationScanFrequency = TimeSpan.FromMinutes(3) });
+        private readonly MemoryCache _cache = new MemoryCache(new MemoryCacheOptions { ExpirationScanFrequency = TimeSpan.FromMinutes(3) });
 
         public async Task InitializeAsync(MainController MainHandler, IServiceProvider services)
         {
@@ -92,10 +89,13 @@ namespace DiscordNet.Handlers
         public Task HandleCommand(SocketMessage parameterMessage)
         {
             var msg = parameterMessage as SocketUserMessage;
-            if (msg == null) return Task.CompletedTask;
-            if (msg.Author.IsBot) return Task.CompletedTask;
-            if (msg.Channel is ITextChannel tc && tc.GuildId == 81384788765712384)
-                if (msg.Channel.Name != "dotnet_discord-net" && msg.Channel.Name != "testing" && msg.Channel.Name != "playground") return Task.CompletedTask;
+            if (msg == null || msg.Author.IsBot)
+                return Task.CompletedTask;
+
+            if (msg.Channel is ITextChannel textChannel && textChannel.GuildId == 81384788765712384)
+                if (msg.Channel.Name != "dotnet_discord-net" && msg.Channel.Name != "testing" && msg.Channel.Name != "playground")
+                    return Task.CompletedTask;
+
             int argPos = 0;
             if (!(msg.HasMentionPrefix(_client.CurrentUser, ref argPos) /*|| msg.HasStringPrefix(MainHandler.Prefix, ref argPos)*/)) return Task.CompletedTask;
             _ = HandleCommandAsync(msg, argPos);
@@ -117,26 +117,21 @@ namespace DiscordNet.Handlers
 
         private async Task<(string, EmbedBuilder, PaginatedMessage)> BuildReply(IUserMessage msg, string message)
         {
-            var context = new MyCommandContext(_client, _mainHandler, msg);
+            var context = new BotCommandContext(_client, _mainHandler, msg);
             var result = await _commandService.ExecuteAsync(context, message, _services);
             if (!result.IsSuccess && result.Error != CommandError.UnknownCommand)
                 return (result.ErrorReason, null, null);
             else if (!result.IsSuccess)
             {
                 if (!_mainHandler.QueryHandler.IsReady())
-                {
-                    return ("Loading cache...", null, null); //TODO: Change message
-                }
+                    return ("Loading cache, please wait a few moments before trying again.", null, null);
                 else
                 {
                     try
                     {
                         var tuple = await _mainHandler.QueryHandler.RunAsync(message);
                         if (tuple.Item2 is PaginatorBuilder pag)
-                        {
-                            var paginated = new PaginatedMessage(pag.Pages, PaginatedMessageActions.Simplified, "Results", user: msg.Author, options: new AppearanceOptions { TimeoutAfterLastAction = TimeSpan.FromMinutes(3) });
-                            return (null, null, paginated);
-                        }
+                            return (null, null, new PaginatedMessage(pag.Pages, PaginatedMessageActions.Simplified, "Results", user: msg.Author, options: new AppearanceOptions { TimeoutAfterLastAction = TimeSpan.FromMinutes(3) }));
                         else
                             return (tuple.Item1, tuple.Item2, null);
                     }

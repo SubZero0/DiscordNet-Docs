@@ -1,5 +1,4 @@
 ﻿using Discord.Webhook;
-using DiscordNet.Query.Wrappers;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;

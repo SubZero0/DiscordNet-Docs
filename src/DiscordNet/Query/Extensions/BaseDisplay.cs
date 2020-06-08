@@ -1,7 +1,4 @@
-﻿using DiscordNet.Handlers;
-using DiscordNet.Query.Results;
-using DiscordNet.Query.Wrappers;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;

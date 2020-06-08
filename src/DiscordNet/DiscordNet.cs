@@ -1,6 +1,5 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using DiscordNet.Controllers;
 using DiscordNet.Github;
 using Microsoft.Extensions.DependencyInjection;
 using Paginator;
@@ -56,7 +55,7 @@ namespace DiscordNet
                     }
 
                     _client.Connected += ctsTask;
-                    await Task.Delay(30000, cts.Token);
+                    try { await Task.Delay(30000, cts.Token); } catch { }
                     if (!cts.IsCancellationRequested)
                         Environment.Exit(1);
                     _client.Connected -= ctsTask;

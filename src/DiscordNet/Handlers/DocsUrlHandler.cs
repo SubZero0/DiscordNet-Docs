@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace DiscordNet.Handlers
+namespace DiscordNet
 {
     public class DocsUrlHandler
     {
@@ -9,8 +9,7 @@ namespace DiscordNet.Handlers
         private string[] _docsUrls =
         {
             "https://docs.stillu.cc/",
-            "https://discord.foxbot.me/latest/",
-            "http://discord.devpaulo.com.br/"
+            "https://discord.foxbot.me/latest/"
         };
 
         public bool CheckAvailability()

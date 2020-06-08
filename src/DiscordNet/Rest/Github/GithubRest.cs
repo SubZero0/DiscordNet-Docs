@@ -1,9 +1,10 @@
-﻿using DiscordNet.Query.Wrappers;
+﻿using DiscordNet.Query;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -22,7 +23,7 @@ namespace DiscordNet.Github
             _authorizationHeader = token;
         }
 
-        private async Task<JObject> SendRequestAsync(HttpMethod method, string endpoint, string extra = null)
+        private async Task<JObject> SendJsonRequestAsync(HttpMethod method, string endpoint, string extra = null)
         {
             using (var http = new HttpClient())
             {
@@ -37,16 +38,47 @@ namespace DiscordNet.Github
             }
         }
 
+        private async Task<Stream> SendRequestAsync(HttpMethod method, string endpoint, string extra = null)
+        {
+            using (var http = new HttpClient())
+            {
+                var request = new HttpRequestMessage(method, $"{_apiUrl}{endpoint}{extra}");
+                request.Headers.Add("Accept", _acceptHeader);
+                request.Headers.Add("User-Agent", _userAgentHeader);
+                request.Headers.Add("Authorization", _authorizationHeader);
+                var response = await http.SendAsync(request);
+                if (response.IsSuccessStatusCode)
+                    return await response.Content.ReadAsStreamAsync();
+                throw new Exception($"{response.ReasonPhrase}: {await response.Content.ReadAsStringAsync()}");
+            }
+        }
+
         public async Task<IEnumerable<string>> GetIssuesUrlsAsync(IEnumerable<string> numbers)
         {
-            var result = await Task.WhenAll(numbers.Select(x => SendRequestAsync(HttpMethod.Get, "/repos/discord-net/Discord.Net/issues/", x)));
+            var result = await Task.WhenAll(numbers.Select(x => SendJsonRequestAsync(HttpMethod.Get, "/repos/discord-net/Discord.Net/issues/", x)));
             return result.Select(x => (string)x["html_url"]);
         }
+
+        public async Task<PullRequest> GetPullRequestAsync(string number)
+        {
+            try
+            {
+                var result = await SendJsonRequestAsync(HttpMethod.Get, "/repos/discord-net/Discord.Net/pulls/", number);
+                return new PullRequest(result);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        public Task<Stream> GetRepositoryDownloadStreamAsync(PullRequest pullRequest)
+            => SendRequestAsync(HttpMethod.Get, $"/repos/{pullRequest.Repository}/zipball/", pullRequest.Ref);
 
         public async Task<List<GitSearchResult>> SearchAsync(string search, string filename = null)
         {
             var extra = $"?q=repo:discord-net/Discord.Net+language:cs+in:file{(filename == null ? "" : $"+filename:{filename}")}+{search.Replace(' ', '+')}&per_page=100";
-            var result = await SendRequestAsync(HttpMethod.Get, "/search/code", extra);
+            var result = await SendJsonRequestAsync(HttpMethod.Get, "/search/code", extra);
             var items = (JArray)result["items"];
             var list = new List<GitSearchResult>();
             foreach (var item in items)
@@ -58,7 +90,7 @@ namespace DiscordNet.Github
                 for (int i = 2; i <= pages + 1; i++)
                 {
                     extra = $"?q=repo:discord-net/Discord.Net+language:cs+in:file{(filename == null ? "" : $"+filename:{filename}")}+{search.Replace(' ', '+')}&per_page=100&page={i}";
-                    result = await SendRequestAsync(HttpMethod.Get, "/search/code", extra);
+                    result = await SendJsonRequestAsync(HttpMethod.Get, "/search/code", extra);
                     items = (JArray)result["items"];
                     foreach (var item in items)
                         list.Add(new GitSearchResult { Name = (string)item["name"], HtmlUrl = (string)item["html_url"] });

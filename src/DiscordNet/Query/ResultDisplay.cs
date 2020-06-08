@@ -1,8 +1,5 @@
 ﻿using Discord;
-using DiscordNet.EmbedExtension;
 using DiscordNet.Github;
-using DiscordNet.Query.Results;
-using DiscordNet.Query.Wrappers;
 using System;
 using System.Collections.Generic;
 using System.Linq;

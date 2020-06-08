@@ -1,4 +1,4 @@
-﻿namespace DiscordNet.Query.Wrappers
+﻿namespace DiscordNet.Query
 {
     public interface BaseInfoWrapper
     {

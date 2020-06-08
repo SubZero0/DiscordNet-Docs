@@ -1,6 +1,4 @@
-﻿using DiscordNet.Query.Results;
-using DiscordNet.Query.Wrappers;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text.RegularExpressions;

@@ -1,10 +1,9 @@
 ﻿using Discord;
 using DiscordNet.Github;
 using DiscordNet.Query;
-using DiscordNet.Query.Results;
 using System.Threading.Tasks;
 
-namespace DiscordNet.Handlers
+namespace DiscordNet
 {
     public class QueryHandler
     {

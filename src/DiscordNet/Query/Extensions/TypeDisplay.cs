@@ -1,12 +1,7 @@
 ﻿using Discord;
-using DiscordNet.Github;
-using DiscordNet.Handlers;
-using DiscordNet.Query.Results;
-using DiscordNet.Query.Wrappers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 
 namespace DiscordNet.Query

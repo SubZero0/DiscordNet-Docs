@@ -1,4 +1,4 @@
-﻿namespace DiscordNet.Query.Results
+﻿namespace DiscordNet.Query
 {
     public class InterpreterResult
     {

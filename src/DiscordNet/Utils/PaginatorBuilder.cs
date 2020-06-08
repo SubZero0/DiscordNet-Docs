@@ -1,7 +1,7 @@
 ﻿using Discord;
 using System.Collections.Generic;
 
-namespace DiscordNet.EmbedExtension
+namespace DiscordNet
 {
     class PaginatorBuilder : EmbedBuilder
     {

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Reflection;
 
-namespace DiscordNet.Query.Wrappers
+namespace DiscordNet.Query
 {
     public class TypeInfoWrapper : BaseInfoWrapper
     {

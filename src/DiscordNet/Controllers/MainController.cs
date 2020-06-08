@@ -1,10 +1,9 @@
 ﻿using Discord.WebSocket;
 using DiscordNet.Github;
-using DiscordNet.Handlers;
 using System;
 using System.Threading.Tasks;
 
-namespace DiscordNet.Controllers
+namespace DiscordNet
 {
     public class MainController
     {

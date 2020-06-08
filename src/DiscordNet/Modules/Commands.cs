@@ -1,9 +1,7 @@
 ﻿using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using DiscordNet.Handlers;
-using DiscordNet.Modules.Addons;
-using DiscordNet.Roslyn;
+using DiscordNet.Github;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
@@ -11,18 +9,23 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Net.Http;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace DiscordNet.Modules
 {
     [Name("Commands")]
-    public class GeneralCommands : ModuleBase<MyCommandContext>
+    public class GeneralCommands : ModuleBase<BotCommandContext>
     {
+        private static string BuildsDirectory { get; } = "Builds";
+
+        public GithubRest GithubRest { get; set; }
+
         [Command("clean")]
         [Summary("Delete all the messages from this bot within the last X messages")]
         public async Task Clean(int messages = 30)
@@ -46,6 +49,169 @@ namespace DiscordNet.Modules
         [Summary("Show the invite url")]
         public Task Invite()
             => ReplyAsync($"Invite: https://discordapp.com/oauth2/authorize?client_id=274366085011079169&scope=bot");
+
+        [Command("artifacts")]
+        [Alias("getartifacts", "pr")]
+        public async Task Artifacts(int prNumber)
+        {
+            string path = Path.Combine(BuildsDirectory, $"{prNumber}.zip");
+            if (File.Exists(path))
+                await Context.Channel.SendFileAsync(path, $"Generated at: {File.GetCreationTimeUtc(path):dd MMM yyy HH:mm:ss} UTC");
+            else
+            {
+                var appInfo = await Context.Client.GetApplicationInfoAsync();
+                await ReplyAsync($"There's no artifacts generated for a pull request numbered {prNumber}.\n" +
+                                 $"You can ask the bot owner ({appInfo.Owner}) to generate them.");
+            }
+        }
+
+        [Command("delartifacts")]
+        [Alias("delpr", "pr")]
+        [RequireOwner]
+        public async Task DelArtifacts(string prNumber)
+        {
+            if (prNumber == "all")
+            {
+                Directory.Delete(BuildsDirectory, true);
+                await ReplyAsync("Deleted all generated artifacts.");
+            }
+            else if (prNumber == "old")
+            {
+                int filesDeleted = 0;
+                foreach (var file in Directory.GetFiles(BuildsDirectory))
+                    if (DateTime.UtcNow - File.GetCreationTimeUtc(file) > TimeSpan.FromDays(180))
+                    {
+                        File.Delete(file);
+                        filesDeleted++;
+                    }
+                await ReplyAsync($"Deleted {filesDeleted} generated artifacts.");
+            }
+            else
+            {
+                string path = Path.Combine(BuildsDirectory, $"{prNumber}.zip");
+                if (File.Exists(path))
+                {
+                    File.Delete(path);
+                    if (Directory.GetFiles(BuildsDirectory).Length == 0)
+                        Directory.Delete(BuildsDirectory);
+                    await ReplyAsync($"Deleted artifacts for pull request #{prNumber}.");
+                }
+                else
+                    await ReplyAsync($"There's no artifacts generated for a pull request numbered {prNumber}.");
+            }
+        }
+
+        [Command("genartifacts", RunMode = RunMode.Async)]
+        [Alias("genpr")]
+        [RequireTrustedMember]
+        public async Task GenArtifacts(int prNumber)
+        {
+            var pr = await GithubRest.GetPullRequestAsync(prNumber.ToString());
+            if (pr == null)
+            {
+                await ReplyAsync("Pull request not found.");
+                return;
+            }
+
+            string filePath = Path.Combine(BuildsDirectory, $"{prNumber}.zip");
+            string zipPath = Path.Combine(BuildsDirectory, $"{prNumber}.zip");
+            string unzipPath = Path.Combine(BuildsDirectory, $"{prNumber}");
+            string artifactsPath = Path.GetFullPath(Path.Combine(unzipPath, "artifacts"));
+
+            if (File.Exists(zipPath))
+            {
+                var emoji = new Emoji("✅");
+                var tokenSource = new CancellationTokenSource();
+                bool reacted = false;
+                Task WaitReaction(Cacheable<IUserMessage, ulong> message, ISocketMessageChannel channel, SocketReaction reaction)
+                {
+                    if (reaction.UserId == Context.User.Id && reaction.Emote.Equals(emoji))
+                    {
+                        reacted = true;
+                        tokenSource.Cancel();
+                    }
+
+                    return Task.CompletedTask;
+                };
+
+                var msg = await ReplyAsync($"There's already generated artifacts for that PR, do you want to recreate them?");
+                await msg.AddReactionAsync(emoji);
+                Context.Client.ReactionAdded += WaitReaction;
+                try { await Task.Delay(30000, tokenSource.Token); } catch { }
+                Context.Client.ReactionAdded -= WaitReaction;
+                tokenSource.Dispose();
+
+                if (!reacted)
+                {
+                    await msg.RemoveReactionAsync(emoji, Context.Client.CurrentUser);
+                    return;
+                }
+
+                File.Delete(zipPath);
+            }
+
+            var typing = Context.Channel.EnterTypingState();
+            try
+            {
+                Directory.CreateDirectory(BuildsDirectory);
+                //Download branch zip
+                using (var stream = await GithubRest.GetRepositoryDownloadStreamAsync(pr))
+                {
+                    using (var file = File.Create(filePath))
+                    {
+                        stream.Seek(0, SeekOrigin.Begin);
+                        await stream.CopyToAsync(file);
+                    }
+                }
+                //Unzip branch
+                ZipFile.ExtractToDirectory(filePath, unzipPath);
+                string unzippedFolder = Directory.GetDirectories(unzipPath)[0];
+                //Delete zip
+                File.Delete(filePath);
+                //Pack
+                Directory.CreateDirectory(artifactsPath);
+                string suffix = $"{prNumber}";
+                Pack("src\\Discord.Net.Core\\Discord.Net.Core.csproj", suffix, artifactsPath, unzippedFolder);
+                Pack("src\\Discord.Net.Rest\\Discord.Net.Rest.csproj", suffix, artifactsPath, unzippedFolder);
+                Pack("src\\Discord.Net.Commands\\Discord.Net.Commands.csproj", suffix, artifactsPath, unzippedFolder);
+                Pack("src\\Discord.Net.WebSocket\\Discord.Net.WebSocket.csproj", suffix, artifactsPath, unzippedFolder);
+                Pack("src\\Discord.Net.Webhook\\Discord.Net.Webhook.csproj", suffix, artifactsPath, unzippedFolder);
+                //Zip packs
+                ZipFile.CreateFromDirectory(artifactsPath, zipPath);
+                //Clean
+                Directory.Delete(unzipPath, true);
+
+                await Context.Channel.SendFileAsync(zipPath);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                await ReplyAsync("Uh... something broke.");
+            }
+            finally
+            {
+                typing?.Dispose();
+            }
+        }
+        private void Pack(string project, string suffix, string outputDir, string workingDir)
+        {
+            var procStartInfo = new ProcessStartInfo
+            {
+                FileName = "dotnet",
+                Arguments = $"pack {project} -o \"{outputDir}\" --version-suffix {suffix} -c Release",
+                WorkingDirectory = workingDir,
+                UseShellExecute = false,
+                CreateNoWindow = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
+            };
+            var pr = new Process
+            {
+                StartInfo = procStartInfo
+            };
+            pr.Start();
+            pr.WaitForExit();
+        }
 
         /*[Command("guides")]
         [Alias("guide")]
@@ -148,10 +314,7 @@ namespace DiscordNet.Modules
             EmbedBuilder eb = new EmbedBuilder();
             string name;
             if (Context.Guild != null)
-            {
-                var user = await Context.Guild.GetCurrentUserAsync();
-                name = user.Nickname ?? user.Username;
-            }
+                name = Context.Guild.CurrentUser.Nickname ?? Context.Guild.CurrentUser.Username;
             else
                 name = Context.Client.CurrentUser.Username;
             eb.Author = new EmbedAuthorBuilder().WithName(name).WithIconUrl(Context.Client.CurrentUser.GetAvatarUrl());
@@ -250,7 +413,7 @@ namespace DiscordNet.Modules
     }
 
     [Name("Help")]
-    public class HelpCommand : ModuleBase<MyCommandContext>
+    public class HelpCommand : ModuleBase<BotCommandContext>
     {
         [Command("help")]
         [Summary("Shows the help command")]
