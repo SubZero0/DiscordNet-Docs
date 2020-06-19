@@ -203,8 +203,10 @@ namespace DiscordNet.Modules
                 UseShellExecute = false,
                 CreateNoWindow = false,
                 RedirectStandardOutput = true,
-                RedirectStandardError = true
+                RedirectStandardError = false
             };
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                procStartInfo.EnvironmentVariables.Add("DOTNET_CLI_HOME", "/tmp");
             var pr = new Process
             {
                 StartInfo = procStartInfo
